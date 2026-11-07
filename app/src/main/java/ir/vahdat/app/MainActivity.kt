@@ -603,4 +603,3 @@ private fun SettingsPage(destinations:List<String>,onSave:(List<String>)->Unit) 
         }
     }
 }
-}
