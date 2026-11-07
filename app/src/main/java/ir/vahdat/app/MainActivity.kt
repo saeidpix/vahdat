@@ -155,7 +155,7 @@ private fun VahdatApp(
                     Page.SETTINGS -> "تنظیمات شعبه"
                 },
                 subtitle = if(page == Page.HOME) "مدیریت آفلاین بار و بارنامه" else null,
-                back = if(page==Page.HOME) null else { page = Page.HOME }
+                back = if(page==Page.HOME) null else ({ page = Page.HOME })
             )
         },
         bottomBar = {
