@@ -38,6 +38,13 @@ fun solarDate(millis: Long, withTime: Boolean = true): String {
     return (if(withTime) "$date - $time" else date).persianDigits()
 }
 
+
+fun solarYearMonth(millis: Long): Pair<Int,Int> {
+    val local = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())
+    val (year, month, _) = gregorianToJalali(local.year,local.monthValue,local.dayOfMonth)
+    return year to month
+}
+
 // Gregorian -> solar Hijri (Jalali), arithmetic conversion.
 private fun gregorianToJalali(gy: Int, gm: Int, gd: Int): Triple<Int,Int,Int> {
     val monthDays = intArrayOf(31,28,31,30,31,30,31,31,30,31,30,31)
