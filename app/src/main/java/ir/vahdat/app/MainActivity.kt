@@ -222,7 +222,7 @@ private fun Header(title:String,subtitle:String?=null,back:(()->Unit)?) {
             Icon(Icons.Outlined.ArrowForward,contentDescription="بازگشت",tint=Color.White)
         }
         Image(
-            painter=painterResource(R.drawable.ic_brand),contentDescription="نشان اتوبنز وحدت",
+            painter=painterResource(R.drawable.brand_logo),contentDescription="نشان اتوبنز وحدت",
             modifier=Modifier.size(52.dp)
         )
         Spacer(Modifier.width(10.dp))
