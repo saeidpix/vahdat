@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اتوبنز وحدت | مدیریت بارنامه</title>
+<style>
+:root{--navy:#061c6f;--blue:#0b4dc8;--red:#e31526;--green:#078348;--ink:#18233d;--muted:#7d869d;--paper:#f2f5fc;--line:#e3e9f4}
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,"Segoe UI",sans-serif;background:var(--paper);color:var(--ink);font-size:14px}
+button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:default}
+.top{height:94px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(95deg,#06216e,#123c9c);color:white;padding:12px 30px;box-shadow:0 2px 10px #0b2b6b24}
+.brand{display:flex;align-items:center;gap:15px}.logo{width:66px;height:66px;object-fit:contain}.brand h1{font-size:24px;margin:0 0 7px;font-weight:800}.brand small{color:#d8e5ff}
+.top .right{display:flex;align-items:center;gap:12px}.pill{font-size:12px;padding:8px 14px;border:1px solid #8fa8e166;border-radius:50px;color:#e1e9ff}
+.shell{display:flex;min-height:calc(100vh - 94px)}.side{width:238px;min-width:238px;background:#fff;border-left:1px solid var(--line);padding:22px 12px}
+.nav{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:12px;margin-bottom:6px;cursor:pointer;font-weight:600;color:#4a5670}.nav:hover,.nav.active{background:#e8eeff;color:var(--blue)}
+.nav .sym{font-size:23px;width:25px;text-align:center}.content{width:min(1100px,100%);margin:0 auto;padding:24px 26px 70px}
+.pagehead{display:flex;align-items:center;justify-content:space-between;margin:0 0 20px;gap:10px}.pagehead h2{margin:0;font-size:23px;color:var(--navy)}
+.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:22px;box-shadow:0 4px 12px #12396a0c;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.tile{border:1px solid #d6e2fc;min-height:163px;border-radius:18px;background:#e7efff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;cursor:pointer;text-align:center}
+.tile:nth-child(2){background:#e5f7ed;border-color:#d6f1df}.tile:nth-child(n+3){background:#fff;border-color:#e3e9f4}
+.tile:hover{box-shadow:0 6px 18px #0b4dc820;transform:translateY(-1px)}.tile .big{font-size:39px;color:var(--blue)}.tile strong{font-size:19px}.tile small{color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:7px}.field label{font-weight:600;color:#4b5871;font-size:13px}.field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid #cfd9e9;border-radius:10px;background:#fff;outline:none;color:var(--ink)}
+.field input:focus,.field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px #0b4dc81b}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:15px 0}
+.btn{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:12px 20px;font-weight:700;min-height:44px}
+.btn:hover{filter:brightness(1.05)}.btn.green{background:var(--green)}.btn.red{background:#b9192c}
+.btn.secondary{background:#f1f5ff;color:var(--blue);border:1px solid #bdcdec}.btn.gray{background:#eef0f5;color:#56627b}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.wide{width:100%}
+.keyrow{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #edf0f5;padding:12px 0}.keyrow:last-child{border-bottom:0}.keyrow span:first-child{color:#6e7890}.keyrow span:last-child{font-weight:700;text-align:left}
+.sum{background:#e6f7ec;border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center;font-size:17px;color:#0b683b;font-weight:bold}
+.money{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.subtitle{font-size:12px;color:var(--muted);margin-top:4px}
+.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;background:#fff}th,td{padding:13px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}th{color:#64708a;background:#f6f8fd}tr:hover td{background:#fafcff}
+.tag{display:inline-block;border-radius:20px;padding:5px 11px;font-weight:bold;font-size:12px;background:#e4efff;color:var(--blue)}.tag.green{color:var(--green);background:#e3f7e9}
+.stat{padding:20px;border-radius:15px;background:#e9f1ff;min-width:0}.stat.green{background:#e2f5e9}.stat.purple{background:#eee7ff}.stat.red{background:#fce8ec}.stat small{color:#52617e}.stat strong{display:block;margin-top:13px;font-size:22px;color:#092b7b}
+.message{padding:13px 16px;border-radius:10px;background:#eef4ff;color:var(--navy);margin-bottom:14px}.message.err{background:#fff0f0;color:#a30e29}
+.scanbox{min-height:220px;border:2px dashed #7ba0e3;border-radius:16px;display:flex;justify-content:center;align-items:center;flex-direction:column;padding:25px;gap:14px;background:#f6f9ff}
+.scanbox input{max-width:650px;width:100%;padding:14px;border:1px solid #bccbe8;border-radius:10px;direction:ltr}
+.qr{display:block;width:300px;max-width:100%;margin:14px auto;border:8px solid white;box-shadow:0 0 0 1px var(--line)}
+.hint{font-size:12px;color:#8690a5}.spacer{height:8px}
+@media(max-width:880px){.side{width:70px;min-width:70px;padding:16px 7px}.nav{justify-content:center}.nav .text{display:none}.content{padding:18px}.grid4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.top{height:76px;padding:8px 13px}.brand h1{font-size:18px}.logo{width:48px;height:48px}.top .pill{display:none}.side{position:fixed;bottom:0;left:0;right:0;width:100%;height:64px;display:flex;z-index:4;min-width:0;padding:4px 3px;border-top:1px solid var(--line);border-left:0}.nav{flex:1;flex-direction:column;gap:1px;padding:4px;font-size:10px;margin:0}.nav .text{display:block;font-size:10px}.nav .sym{font-size:19px}.content{padding:17px 12px 85px}.shell{display:block}.grid2{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.card{padding:16px}.tile{min-height:128px}.pagehead h2{font-size:18px}.stat strong{font-size:19px}}
+@media print{.top,.side,.pagehead,.toolbar,.btn,.noprint{display:none!important}.shell,.content{display:block;padding:0;width:100%}.card{border:0;box-shadow:none}.qr{width:270px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><img class="logo" src="/logo.png" alt="لوگوی اتوبنز وحدت"><div><h1>اتوبنز وحدت</h1><small>مدیریت بار و بارنامه</small></div></div><div class="right"><span class="pill" id="branchLabel">مبدأ: تهران</span></div></header>
+<div class="shell"><aside class="side">
+<div class="nav active" id="nav-home" onclick="go('home')"><span class="sym">⌂</span><span class="text">خانه</span></div>
+<div class="nav" id="nav-new" onclick="go('new')"><span class="sym">▤</span><span class="text">صدور بارنامه</span></div>
+<div class="nav" id="nav-scan" onclick="go('scan')"><span class="sym">▦</span><span class="text">دریافت بار</span></div>
+<div class="nav" id="nav-list" onclick="go('list')"><span class="sym">☷</span><span class="text">بارنامه‌ها</span></div>
+<div class="nav" id="nav-reports" onclick="go('reports')"><span class="sym">▥</span><span class="text">گزارش مالی</span></div>
+<div class="nav" id="nav-settings" onclick="go('settings')"><span class="sym">⚙</span><span class="text">تنظیمات</span></div>
+</aside><main class="content" id="page"></main></div>
+<script>
+"use strict";
+var state={page:"home",settings:{origin:"تهران",destinations:["قائم‌شهر"]},current:null,period:"today"};
+var fa=new Intl.NumberFormat("fa-IR");
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function latin(v){return String(v||"").replace(/[۰-۹]/g,function(d){return String(d.charCodeAt(0)-1776)}).replace(/[٠-٩]/g,function(d){return String(d.charCodeAt(0)-1632)})}
+function num(v){return Number(latin(v).replace(/[^0-9]/g,"")||"0")}
+function fmt(v){return fa.format(Number(v)||0)}
+function money(v){return fmt(v)+" تومان"}
+function groupField(el){var s=latin(el.value).replace(/\D/g,"");if(s.length>16)s=s.slice(0,16);el.value=s?fmt(s):"";calculate()}
+function calculate(){var keys=["prepaid","post_fare","storage_fee","other_fee"];var total=keys.reduce(function(a,k){var e=document.getElementById(k);return a+num(e?e.value:0)},0);var e=document.getElementById("fareTotal");if(e)e.textContent=money(total)}
+async function api(url,opts){var response=await fetch(url,Object.assign({cache:"no-store"},opts||{}));var data=await response.json();if(!response.ok)throw Error(data.error||"خطای ارتباط با برنامه");return data}
+function post(url,value){return api(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(value)})}
+function title(t,action){return '<div class="pagehead"><h2>'+esc(t)+'</h2>'+(action||"")+'</div>'}
+function row(k,v){return '<div class="keyrow"><span>'+esc(k)+'</span><span>'+esc(v)+'</span></div>'}
+function field(id,label,value,extra){return '<div class="field"><label for="'+esc(id)+'">'+esc(label)+'</label><input id="'+esc(id)+'" value="'+esc(value||"")+'" '+(extra||"")+'></div>'}
+function card(content){return '<div class="card">'+content+'</div>'}
+function set(html){document.getElementById("page").innerHTML=html;window.scrollTo({top:0,behavior:"instant"})}
+function fail(e){alert(e.message||String(e))}
+function nav(p){document.querySelectorAll(".nav").forEach(function(e){e.classList.toggle("active",e.id==="nav-"+p)})}
+async function go(p){state.page=p;nav(p);try{
+if(p==="home")home();
+if(p==="new")newForm();
+if(p==="scan")scanForm();
+if(p==="list")await listings();
+if(p==="reports")await reports();
+if(p==="settings")await settingsForm();
+}catch(e){fail(e)}}
+function home(){set(title("داشبورد")+card(row("مبدأ","تهران"))+
+'<div class="grid4">'+
+'<button class="tile" onclick="go(&quot;new&quot;)"><span class="big">▤</span><strong>صدور بارنامه</strong><small>ثبت بار جدید</small></button>'+
+'<button class="tile" onclick="go(&quot;scan&quot;)"><span class="big">▦</span><strong>دریافت بار</strong><small>خواندن QR</small></button>'+
+'<button class="tile" onclick="go(&quot;list&quot;)"><span class="big">☷</span><strong>بارنامه‌ها</strong><small>جست‌وجو و تحویل</small></button>'+
+'<button class="tile" onclick="go(&quot;reports&quot;)"><span class="big">▥</span><strong>گزارش مالی</strong><small>حساب‌ها و وصولی‌ها</small></button></div>')}
+function newForm(){
+var destinations=state.settings.destinations||[];
+var dest="";
+if(destinations.length===1)dest=row("مقصد",destinations[0]);
+else if(destinations.length>1)dest='<div class="field"><label>مقصد</label><select id="destination">'+destinations.map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>'}).join("")+'</select></div>';
+else dest=field("destination","مقصد","");
+var html=title("صدور بارنامه")+card(row("مبدأ","تهران")+
+'<div class="fields"><div>'+dest+'</div><div></div>'+
+field("sender","نام فرستنده","")+field("receiver","نام گیرنده","")+
+field("phone","موبایل گیرنده","")+field("pieces","تعداد بسته","۱",'inputmode="numeric"')+'</div>')+
+card('<h3>کرایه و هزینه‌ها (تومان)</h3><div class="fields">'+
+field("prepaid","پیش‌کرایه","",'inputmode="numeric" class="money" oninput="groupField(this)"')+
+field("post_fare","پس‌کرایه","",'inputmode="numeric" class="money" oninput="groupField(this)"')+
+field("storage_fee","انبارداری","",'inputmode="numeric" class="money" oninput="groupField(this)"')+
+field("other_fee","سایر هزینه‌ها","",'inputmode="numeric" class="money" oninput="groupField(this)"')+
+'</div><div class="sum"><span>جمع کل کرایه</span><span id="fareTotal">۰ تومان</span></div></div>'+
+'<div class="toolbar"><button class="btn" onclick="create()">صدور بارنامه و ساخت QR</button></div>';
+set(html)
+}
+async function create(){try{
+var keys=["destination","sender","receiver","phone","pieces","prepaid","post_fare","storage_fee","other_fee"];
+var d={};keys.forEach(function(k){var e=document.getElementById(k);d[k]=e?e.value:""});
+if(!document.getElementById("destination"))d.destination=state.settings.destinations[0]||"";
+["prepaid","post_fare","storage_fee","other_fee","pieces"].forEach(function(k){d[k]=num(d[k])});
+var r=await post("/api/waybills",d);await showBill(r.waybill.id,true)
+}catch(e){fail(e)}}
+function scanForm(){
+set(title("دریافت بار")+card(
+'<div class="scanbox"><div style="font-size:55px;color:var(--blue)">▦</div>'+
+'<strong>QR بارنامه را با اسکنر USB بخوانید</strong>'+
+'<input id="qrInput" dir="ltr" autocomplete="off" spellcheck="false" placeholder="کد پس از اسکن اینجا وارد می‌شود">'+
+'<button class="btn green" onclick="importQr()">خواندن بارنامه</button></div>'));
+var inp=document.getElementById("qrInput");inp.focus();
+inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();importQr()}});
+}
+async function importQr(){try{
+var input=document.getElementById("qrInput");if(!input||!input.value.trim())return;
+var r=await post("/api/import",{qr:input.value.trim()});
+await showBill(r.waybill.id,false);
+if(!r.fresh)alert("بارنامه قبلاً ثبت شده و نسخه موجود باز شد.");
+}catch(e){fail(e)}}
+async function listings(){
+var q=state.search||"";
+set(title("بارنامه‌ها")+
+card('<div class="field"><label>جست‌وجو بر اساس شماره، نام یا موبایل</label><input id="search" value="'+esc(q)+'" placeholder="جست‌وجو..." oninput="searchBills(this.value)"></div>')+
+'<div class="card" id="listContent">در حال دریافت...</div>');
+await searchBills(q)}
+async function searchBills(q){state.search=q;
+try{
+var data=await api("/api/waybills?q="+encodeURIComponent(q||""));
+var html='<div class="tablewrap"><table><thead><tr><th>شماره</th><th>مسیر</th><th>گیرنده</th><th>جمع کل</th><th>وضعیت</th><th></th></tr></thead><tbody>';
+data.items.forEach(function(b){
+html+='<tr><td dir="ltr">'+esc(b.id)+'</td><td>'+esc(b.origin)+' ← '+esc(b.destination)+'</td><td>'+esc(b.receiver)+'</td><td>'+money(b.total)+'</td><td><span class="tag '+(b.delivered_at?"green":"")+'">'+esc(b.status)+'</span></td><td><button class="btn secondary" onclick="showBill(&quot;'+esc(b.id)+'&quot;)">نمایش</button></td></tr>';
+});
+html+='</tbody></table></div>';
+if(!data.items.length)html='<div class="muted">بارنامه‌ای ثبت نشده است.</div>';
+var e=document.getElementById("listContent");if(e)e.innerHTML=html;
+}catch(e){fail(e)}}
+async function showBill(id,showQR){
+try{
+state.current=id;
+var r=await api("/api/waybills/"+encodeURIComponent(id));var b=r.waybill;
+state.page="detail";nav("list");
+var status=b.delivered_at?"green":"";
+var html=title("جزئیات بارنامه",
+'<div class="toolbar noprint"><button class="btn secondary" onclick="go(&quot;list&quot;)">بازگشت</button><button class="btn secondary" onclick="window.print()">چاپ</button></div>')+
+'<div class="grid2"><div>'+card(
+'<h3>مشخصات بارنامه <span class="tag '+status+'">'+esc(b.status)+'</span></h3>'+
+row("شماره بارنامه",b.id)+row("مبدأ",b.origin)+row("مقصد",b.destination)+row("فرستنده",b.sender)+row("گیرنده",b.receiver)+row("موبایل گیرنده",b.phone)+row("تعداد بسته",fmt(b.pieces))+
+row("صدور",b.created_at_fa)+(b.received_at?row("ثبت دریافت",b.received_at_fa):"")+
+(b.delivered_at?row("ثبت تحویل",b.delivered_at_fa):""))+'</div><div>'+
+card('<h3>حساب مالی</h3>'+row("پیش‌کرایه",money(b.prepaid))+
+row("پس‌کرایه",money(b.post_fare))+row("انبارداری",money(b.storage_fee))+
+row("سایر هزینه‌ها",money(b.other_fee))+
+'<div class="sum"><span>جمع کل</span><span>'+money(b.total)+'</span></div>'+
+row("مانده قابل وصول در مقصد",money(b.due))+
+(b.delivered_at?row("وصول‌شده در مقصد",money(b.post_collected)):""))+
+card('<h3>QR بارنامه</h3><img class="qr" alt="QR بارنامه" src="/api/qr/'+encodeURIComponent(b.id)+'">')+'</div></div>';
+if(!b.received_at)html+=card('<button class="btn green" onclick="receive()">ثبت دریافت بار</button>');
+else if(!b.delivered_at)html+=card('<h3>تحویل بار به گیرنده</h3><div class="fields">'+
+field("person","نام تحویل‌گیرنده",b.receiver)+
+field("collected","مبلغ وصول‌شده در مقصد",fmt(b.due),'class="money" inputmode="numeric" oninput="groupField(this)"')+
+'</div><button class="btn green" onclick="deliver()">ثبت تحویل و وصول کرایه</button>');
+else html+=card('<div class="tag green">بار تحویل شده است</div>'+row("تحویل‌گیرنده",b.delivered_to));
+set(html)
+}catch(e){fail(e)}}
+async function receive(){try{await post("/api/waybills/"+encodeURIComponent(state.current)+"/receive",{});showBill(state.current)}catch(e){fail(e)}}
+async function deliver(){try{await post("/api/waybills/"+encodeURIComponent(state.current)+"/deliver",
+{person:document.getElementById("person").value,collected:num(document.getElementById("collected").value)});showBill(state.current)}catch(e){fail(e)}}
+async function reports(){
+var p=state.period;
+var d=await api("/api/reports?period="+p);
+var periodButtons='<div class="toolbar">'+[
+["today","امروز"],["month","این ماه"],["all","همه"]].map(function(x){
+return '<button class="btn '+(p===x[0]?"":"secondary")+'" onclick="setPeriod(&quot;'+x[0]+'&quot;)">'+x[1]+'</button>'
+}).join("")+"</div>";
+var stats='<div class="grid4">'+[
+["جمع کل کرایه","total",""],["پیش‌کرایه","prepaid","green"],["پس‌کرایه","post_fare",""],["انبارداری","storage_fee","purple"],["سایر هزینه‌ها","other_fee",""]].map(function(x){
+return '<div class="stat '+x[2]+'"><small>'+x[0]+'</small><strong>'+money(d[x[1]])+'</strong></div>'
+}).join("")+'</div>';
+set(title("گزارش مالی")+card(periodButtons+row("تاریخ شمسی",d.today))+stats+
+card('<h3>وصولی‌ها و مطالبات</h3>'+row("وصول‌شده در مقصد (بازه انتخابی)",money(d.collected))+
+row("مطالبات باز مقصد (کل سوابق)",money(d.receivable)))+
+card('<h3>تعداد عملیات</h3>'+row("بارنامه صادرشده",fmt(d.issued))+
+row("بار دریافت‌شده",fmt(d.received))+row("بار تحویل‌شده",fmt(d.delivered))))
+}
+function setPeriod(p){state.period=p;reports().catch(fail)}
+async function settingsForm(){
+var r=await api("/api/settings");state.settings=r;
+set(title("تنظیمات")+
+card('<h3>شعبه مبدأ</h3>'+row("مبدأ ثابت نسخه نمایشی","تهران"))+
+card('<h3>مدیریت مقصدها</h3><div id="destlist"></div>'+
+'<div class="fields">'+field("newdest","مقصد جدید","")+
+'<div class="field"><label>&nbsp;</label><button class="btn secondary" onclick="addDest()">افزودن مقصد</button></div></div>'+
+'<button class="btn" onclick="saveDest()">ذخیره مقصدها</button>')+
+card('<h3>پشتیبان‌گیری</h3><a href="/api/backup" class="btn secondary" style="display:inline-block;text-decoration:none">دریافت نسخه پشتیبان بانک اطلاعاتی</a>'));
+renderDest()
+}
+function renderDest(){var e=document.getElementById("destlist");if(!e)return;
+e.innerHTML=state.settings.destinations.map(function(d,i){
+return '<div class="keyrow"><span>'+esc(d)+'</span><button class="btn red" onclick="removeDest('+i+')">حذف</button></div>'
+}).join("")||'<div class="muted">هنوز مقصدی تعریف نشده است.</div>'
+}
+function addDest(){var e=document.getElementById("newdest");var d=(e.value||"").trim();
+if(d&&!state.settings.destinations.includes(d)){state.settings.destinations.push(d);renderDest()}e.value=""}
+function removeDest(i){state.settings.destinations.splice(i,1);renderDest()}
+async function saveDest(){try{var r=await post("/api/settings",{destinations:state.settings.destinations});
+state.settings.destinations=r.destinations;alert("مقصدها ذخیره شدند.");renderDest()}catch(e){fail(e)}}
+(async function(){try{state.settings=await api("/api/settings");go("home")}catch(e){fail(e)}})();
+</script>
+</body>
+</html>
