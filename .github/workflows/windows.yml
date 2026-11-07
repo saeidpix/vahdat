@@ -1,0 +1,56 @@
+name: Windows installer
+on:
+  push:
+    branches: [feature/windows-lan-demo]
+    paths:
+      - 'windows/**'
+      - '.github/workflows/windows.yml'
+      - 'app/src/main/res/drawable/brand_logo.png'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r windows/requirements.txt
+          python -m pip install pyinstaller==6.16.0
+      - name: Prepare official brand logo
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force windows/assets | Out-Null
+          Copy-Item app/src/main/res/drawable/brand_logo.png windows/assets/logo.png
+          python -c "from PIL import Image; Image.open('windows/assets/logo.png').convert('RGBA').save('windows/assets/logo.ico',format='ICO',sizes=[(16,16),(32,32),(48,48),(64,64),(128,128)])"
+      - name: Run Windows functional tests
+        shell: pwsh
+        run: python -m unittest discover -s windows -p test_*.py -v
+      - name: Build portable Windows executable
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --noconsole --name VahdatServer --icon "windows/assets/logo.ico" --add-data "windows/ui.html;." --add-data "windows/assets/logo.png;." windows/app.py
+          if (-not (Test-Path "dist/VahdatServer.exe")) { throw "EXE missing" }
+      - name: Ensure Inno Setup is installed
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --yes --no-progress
+          }
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { throw "Inno compiler missing" }
+      - name: Build installable setup EXE
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "windows/install.iss"
+          if (-not (Test-Path "dist/installer/Vahdat-Setup-Windows-v0.1.exe")) { throw "Setup missing" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Vahdat-Windows-Installer-v0.1
+          path: dist/installer/Vahdat-Setup-Windows-v0.1.exe
+          if-no-files-found: error
