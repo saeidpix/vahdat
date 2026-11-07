@@ -154,7 +154,7 @@ private fun VahdatApp(
                     Page.REPORT -> "گزارش مالی"
                     Page.SETTINGS -> "تنظیمات شعبه"
                 },
-                subtitle = if(page == Page.HOME) "مدیریت آفلاین بار و بارنامه" else null,
+                subtitle = null,
                 back = if(page==Page.HOME) null else ({ page = Page.HOME })
             )
         },
@@ -181,13 +181,15 @@ private fun VahdatApp(
         Box(Modifier.fillMaxSize().padding(insets)) {
             when(page) {
                 Page.HOME -> Home(
-                    branch = store.branch, bills = bills,
+                    branch = store.branch,
                     goNew = {page=Page.NEW}, goScan=startScan,
                     goList={page=Page.LIST}, goReport={page=Page.REPORT}
                 )
-                Page.NEW -> NewWaybill(store.branch) { dest,sender,receiver,phone,pieces,total,prepaid ->
+                Page.NEW -> NewWaybill(store.branch,store.destinations) {
+                        dest,sender,receiver,phone,pieces,prepaid,postFare,storage,other ->
                     try {
-                        val bill=store.newWaybill(dest,sender,receiver,phone,pieces,total,prepaid)
+                        val bill=store.newWaybill(dest,sender,receiver,phone,pieces,
+                            prepaid,postFare,storage,other)
                         revision++; selectedId=bill.id; page=Page.QR
                     } catch(e: Exception) { error=e.message ?: "خطای ذخیره" }
                 }
@@ -202,8 +204,8 @@ private fun VahdatApp(
                     onQr={page=Page.QR}
                 )
                 Page.REPORT -> Reports(bills)
-                Page.SETTINGS -> SettingsPage(store.branch) {
-                    store.branch=it;revision++;page=Page.HOME
+                Page.SETTINGS -> SettingsPage(store.destinations) {
+                    store.destinations=it;revision++;page=Page.HOME
                 }
             }
         }
@@ -215,6 +217,7 @@ private fun Header(title:String,subtitle:String?=null,back:(()->Unit)?) {
     Row(
         modifier=Modifier.fillMaxWidth()
             .background(Brush.horizontalGradient(listOf(Navy,Color(0xFF123C9E))))
+            .statusBarsPadding()
             .padding(horizontal=16.dp,vertical=12.dp),
         verticalAlignment=Alignment.CenterVertically
     ) {
@@ -294,14 +297,12 @@ private fun Field(label:String,value:String,onChange:(String)->Unit,
 }
 
 @Composable
-private fun Home(branch:String,bills:List<Waybill>,goNew:()->Unit,goScan:()->Unit,
+private fun Home(branch:String,goNew:()->Unit,goScan:()->Unit,
                  goList:()->Unit,goReport:()->Unit) {
     Body {
         Block {
-            Info("شعبه فعال",branch)
-            Info("تاریخ و ساعت",solarDate(System.currentTimeMillis()))
-            Text("تمام عملیات بدون اینترنت انجام می‌شود.",
-                fontSize=12.sp,color=Green)
+            Info("مبدأ",branch)
+            Info("تاریخ",solarDate(System.currentTimeMillis(),false))
         }
         Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
             HomeTile("صدور بارنامه","ثبت بار جدید",Icons.Outlined.NoteAdd,
@@ -312,18 +313,9 @@ private fun Home(branch:String,bills:List<Waybill>,goNew:()->Unit,goScan:()->Uni
         Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
             HomeTile("بارنامه‌ها","جست‌وجو و تحویل",Icons.Outlined.ReceiptLong,
                 Color.White,Modifier.weight(1f),goList)
-            HomeTile("گزارش مالی","درآمد و مانده",Icons.Outlined.AccountBalanceWallet,
+            HomeTile("گزارش مالی","حساب‌ها و وصولی‌ها",Icons.Outlined.AccountBalanceWallet,
                 Color.White,Modifier.weight(1f),goReport)
         }
-        Block("خلاصه همین گوشی") {
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                Count("صادرشده",bills.count{it.receivedAt==null && it.deliveredAt==null})
-                Count("دریافت‌شده",bills.count{it.receivedAt!=null && it.deliveredAt==null})
-                Count("تحویل‌شده",bills.count{it.deliveredAt!=null})
-            }
-        }
-        Text("نسخه نمایشی ۰.۱ • داده‌های هر گوشی مستقل است.",
-            color=Color.Gray,fontSize=11.sp)
     }
 }
 @Composable
@@ -346,50 +338,70 @@ private fun HomeTile(title:String,subtitle:String,icon:ImageVector,
     }
 }
 @Composable
-private fun Count(title:String,count:Int) {
-    Column(horizontalAlignment=Alignment.CenterHorizontally) {
-        Text(count.fa(),color=Blue,fontWeight=FontWeight.Bold,fontSize=23.sp)
-        Text(title,fontSize=11.sp,color=Ink)
-    }
-}
-@Composable
-private fun NewWaybill(branch:String,
-                      onCreate:(String,String,String,String,Int,Long,Long)->Unit) {
-    var dest by remember { mutableStateOf("اصفهان") }
+private fun NewWaybill(branch:String,destinations:List<String>,
+    onCreate:(String,String,String,String,Int,Long,Long,Long,Long)->Unit
+) {
+    var dest by remember(destinations) { mutableStateOf(destinations.firstOrNull().orEmpty()) }
+    var expanded by remember { mutableStateOf(false) }
     var sender by remember { mutableStateOf("") }
     var receiver by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var count by remember { mutableStateOf("۱") }
-    var total by remember { mutableStateOf("") }
     var prepaid by remember { mutableStateOf("") }
+    var postFare by remember { mutableStateOf("") }
+    var storage by remember { mutableStateOf("") }
+    var other by remember { mutableStateOf("") }
+    val total=prepaid.amount()+postFare.amount()+storage.amount()+other.amount()
     Body {
         Block {
-            Info("مبدأ (خودکار)",branch)
-            Info("تاریخ و شماره بارنامه","ثبت خودکار")
-            Field("شعبه مقصد",dest,{dest=it})
+            Info("مبدأ",branch)
+            if(destinations.size == 1) {
+                Info("مقصد",destinations.first())
+            } else if(destinations.isNotEmpty()) {
+                Text("شعبه مقصد",fontSize=13.sp,color=Ink)
+                Box(Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick={expanded=true},
+                        modifier=Modifier.fillMaxWidth(),
+                        shape=RoundedCornerShape(12.dp)
+                    ) {
+                        Text(dest,modifier=Modifier.weight(1f),textAlign=TextAlign.Start)
+                        Icon(Icons.Outlined.ArrowDropDown,contentDescription="بازکردن مقصدها")
+                    }
+                    DropdownMenu(expanded=expanded,onDismissRequest={expanded=false}) {
+                        destinations.forEach { option ->
+                            DropdownMenuItem(
+                                text={Text(option)},
+                                onClick={dest=option;expanded=false}
+                            )
+                        }
+                    }
+                }
+            } else {
+                Field("مقصد",dest,{dest=it})
+            }
             Field("نام فرستنده",sender,{sender=it})
             Field("نام گیرنده",receiver,{receiver=it})
-            Field("موبایل گیرنده (اختیاری)",phone,{phone=it})
+            Field("موبایل گیرنده",phone,{phone=it})
             Field("تعداد بسته",count,{count=it},numeric=true)
         }
-        Block("کرایه بارنامه • تومان") {
-            Field("کل کرایه",total,{total=it},numeric=true,placeholder="مثلاً ۱۲۰۰۰۰۰")
-            Field("پیش‌کرایه",prepaid,{prepaid=it},numeric=true,placeholder="مثلاً ۴۰۰۰۰۰")
+        Block("مبالغ • تومان") {
+            Field("پیش‌کرایه",prepaid,{prepaid=it.groupedAmount()},numeric=true)
+            Field("پس‌کرایه",postFare,{postFare=it.groupedAmount()},numeric=true)
+            Field("انبارداری",storage,{storage=it.groupedAmount()},numeric=true)
+            Field("سایر هزینه‌ها",other,{other=it.groupedAmount()},numeric=true)
             Surface(color=Color(0xFFE6F7EB),shape=RoundedCornerShape(10.dp)) {
                 Row(Modifier.fillMaxWidth().padding(14.dp),
                     horizontalArrangement=Arrangement.SpaceBetween) {
-                    Text("پس‌کرایه",fontWeight=FontWeight.Bold)
-                    Text((total.amount()-prepaid.amount()).toman(),
-                        color=Green,fontWeight=FontWeight.Bold)
+                    Text("جمع کل کرایه",fontWeight=FontWeight.Bold)
+                    Text(total.toman(),color=Green,fontWeight=FontWeight.Bold)
                 }
             }
         }
-        PrimaryButton("صدور بارنامه و ساخت QR",Icons.Outlined.QrCode) {
+        PrimaryButton("صدور بارنامه",Icons.Outlined.QrCode) {
             onCreate(dest,sender,receiver,phone,count.asciiDigits().toIntOrNull()?:1,
-                total.amount(),prepaid.amount())
+                prepaid.amount(),postFare.amount(),storage.amount(),other.amount())
         }
-        Text("فیلدها سخت‌گیرانه بررسی نمی‌شوند؛ برای پیش‌نمایش می‌توانید اطلاعات آزمایشی بزنید.",
-            fontSize=11.sp,color=Color.Gray)
     }
 }
 @Composable
@@ -451,7 +463,7 @@ private fun BillList(bills:List<Waybill>,onOpen:(String)->Unit) {
 private fun BillDetail(bill:Waybill,onReceive:()->Unit,
                        onDeliver:(String,Long)->Unit,onQr:()->Unit) {
     var person by remember(bill.id) { mutableStateOf(bill.receiver) }
-    var paid by remember(bill.id) { mutableStateOf(bill.due.coerceAtLeast(0L).toString()) }
+    var paid by remember(bill.id) { mutableStateOf(bill.due.coerceAtLeast(0L).toString().groupedAmount()) }
     Body {
         Block("مشخصات بارنامه") {
             Info("شماره",bill.id)
@@ -467,9 +479,13 @@ private fun BillDetail(bill:Waybill,onReceive:()->Unit,
             if(bill.deliveredAt!=null) Info("تحویل به گیرنده",solarDate(bill.deliveredAt))
         }
         Block("حساب مالی") {
-            Info("کل کرایه",bill.total.toman())
             Info("پیش‌کرایه",bill.prepaid.toman())
-            Info("پس‌کرایه",bill.due.toman(),Blue)
+            Info("پس‌کرایه",bill.postFare.toman())
+            Info("انبارداری",bill.storageFee.toman())
+            Info("سایر هزینه‌ها",bill.otherFee.toman())
+            HorizontalDivider()
+            Info("جمع کل کرایه",bill.total.toman(),Blue)
+            Info("مانده قابل وصول در مقصد",bill.due.toman())
             if(bill.deliveredAt!=null) Info("وصول در مقصد",bill.postCollected.toman(),Green)
         }
         if(bill.receivedAt == null) {
@@ -477,7 +493,7 @@ private fun BillDetail(bill:Waybill,onReceive:()->Unit,
         } else if(bill.deliveredAt == null) {
             Block("تحویل نهایی به گیرنده") {
                 Field("نام تحویل‌گیرنده",person,{person=it})
-                Field("پس‌کرایه وصول‌شده (تومان)",paid,{paid=it},numeric=true)
+                Field("مبلغ وصول‌شده در مقصد (تومان)",paid,{paid=it.groupedAmount()},numeric=true)
                 PrimaryButton("ثبت تحویل و وصول کرایه",Icons.Outlined.Check,true) {
                     onDeliver(person,paid.amount())
                 }
@@ -487,8 +503,6 @@ private fun BillDetail(bill:Waybill,onReceive:()->Unit,
             Info("تحویل‌گیرنده",bill.deliveredTo)
         }
         PrimaryButton("نمایش QR بارنامه",Icons.Outlined.QrCode,onClick=onQr)
-        if(!bill.originHere) Text("این بارنامه با QR وارد شده است؛ پیش‌کرایه آن درآمد صندوق این گوشی نیست.",
-            color=Color.Gray,fontSize=11.sp)
     }
 }
 @Composable
@@ -505,38 +519,42 @@ private fun Reports(bills:List<Waybill>) {
     }
     val issued=bills.filter{it.originHere && included(it.createdAt)}
     val delivered=bills.filter{included(it.deliveredAt)}
-    val received=bills.filter{included(it.receivedAt)}
-    val sumIssued=issued.sumOf{it.total}
-    val sumPre=issued.sumOf{it.prepaid}
-    val sumPost=delivered.sumOf{it.postCollected}
-    val receivable=bills.filter{ !it.originHere && it.deliveredAt==null }
-        .sumOf{it.due.coerceAtLeast(0)}
+    val pre=issued.sumOf{it.prepaid}
+    val post=issued.sumOf{it.postFare}
+    val warehousing=issued.sumOf{it.storageFee}
+    val extras=issued.sumOf{it.otherFee}
+    val total=issued.sumOf{it.total}
+    val collected=delivered.sumOf{it.postCollected}
+    val receivable=bills.filter{!it.originHere}
+        .sumOf{(it.due-it.postCollected).coerceAtLeast(0)}
     Body {
         Block("بازه گزارش") {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)) {
                 listOf("امروز","این ماه","همه").forEachIndexed { index,label ->
-                    FilterChip(
-                        selected=filter==index,onClick={filter=index},
+                    FilterChip(selected=filter==index,onClick={filter=index},
                         label={Text(label,fontSize=12.sp)},
                         colors=FilterChipDefaults.filterChipColors(
-                            selectedContainerColor=Color(0xFFE5EDFF)
-                        )
-                    )
+                            selectedContainerColor=Color(0xFFE5EDFF)))
                 }
             }
             Info("تاریخ",solarDate(System.currentTimeMillis(),false))
         }
-        ReportCard("کل کرایه بارنامه‌های صادرشده",sumIssued,Icons.Outlined.LocalShipping,Color(0xFFE2EEFF))
-        ReportCard("پیش‌کرایه وصول‌شده در مبدأ",sumPre,Icons.Outlined.AccountBalanceWallet,Color(0xFFE5F5E9))
-        ReportCard("پس‌کرایه وصول‌شده در مقصد",sumPost,Icons.Outlined.Payments,Color(0xFFECE6FF))
-        ReportCard("مطالبات فعلی مقصد (همه تاریخ‌ها)",receivable,Icons.Outlined.Schedule,Color(0xFFFFE6EA))
-        Block("تعداد عملیات این بازه") {
-            Info("صدور بارنامه",issued.size.fa())
-            Info("ثبت دریافت",received.size.fa())
-            Info("ثبت تحویل",delivered.size.fa())
+        Block("مبالغ بارنامه‌های صادرشده") {
+            Info("پیش‌کرایه",pre.toman())
+            Info("پس‌کرایه",post.toman())
+            Info("انبارداری",warehousing.toman())
+            Info("سایر هزینه‌ها",extras.toman())
+            HorizontalDivider()
+            Info("جمع کل",total.toman(),Blue)
         }
-        Text("گزارش فقط اطلاعات ثبت‌شده روی همین گوشی را شامل می‌شود. مبلغ‌های مبدأ و مقصد تکراری جمع نمی‌شوند.",
-            fontSize=11.sp,color=Color.Gray)
+        ReportCard("وصولی واقعی مقصد در این بازه",collected,
+            Icons.Outlined.Payments,Color(0xFFE5F5E9))
+        ReportCard("مانده وصول‌نشده مقصد (همه تاریخ‌ها)",receivable,
+            Icons.Outlined.Schedule,Color(0xFFFFE6EA))
+        Block("تعداد بارنامه‌ها در بازه") {
+            Info("صادرشده",issued.size.fa())
+            Info("تحویل‌شده",delivered.size.fa())
+        }
     }
 }
 @Composable
@@ -554,20 +572,35 @@ private fun ReportCard(label:String,amount:Long,icon:ImageVector,color:Color) {
     }
 }
 @Composable
-private fun SettingsPage(branch:String,onSave:(String)->Unit) {
-    var name by remember {mutableStateOf(branch)}
+private fun SettingsPage(destinations:List<String>,onSave:(List<String>)->Unit) {
+    var edited by remember(destinations) {mutableStateOf(destinations)}
+    var newDest by remember {mutableStateOf("")}
     Body {
-        Block("نام شعبه این گوشی") {
-            Field("شعبه",name,{name=it})
-            PrimaryButton("ذخیره تنظیمات",Icons.Outlined.Save) {onSave(name)}
-        }
-        Block("درباره نسخه نمایشی") {
-            Info("نام شرکت","اتوبنز وحدت")
-            Info("نسخه","۰.۱ آفلاین")
-            Text("برای نمایش روی دو گوشی، نام شعبه را در هر کدام جداگانه انتخاب کنید.",
-                color=Ink,fontSize=13.sp)
-            Text("QR این نسخه رمزگذاری نشده است؛ لطفاً برای آزمایش از اطلاعات ساختگی استفاده کنید.",
-                color=Red,fontSize=12.sp)
+        Block("مبدأ") { Info("شعبه مبدأ","تهران") }
+        Block("مدیریت مقصدها") {
+            edited.forEach { city ->
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
+                    horizontalArrangement=Arrangement.SpaceBetween) {
+                    Text(city,modifier=Modifier.weight(1f),fontWeight=FontWeight.Medium)
+                    IconButton(onClick={edited=edited.filterNot{it==city}}) {
+                        Icon(Icons.Outlined.Delete,contentDescription="حذف "+city,tint=Red)
+                    }
+                }
+            }
+            Field("نام مقصد جدید",newDest,{newDest=it},placeholder="مثلاً قائم‌شهر")
+            OutlinedButton(onClick={
+                val value=newDest.trim()
+                if(value.isNotEmpty()) {
+                    edited=(edited+value).distinct()
+                    newDest=""
+                }
+            },modifier=Modifier.fillMaxWidth()) {
+                Icon(Icons.Outlined.Add,contentDescription=null)
+                Spacer(Modifier.width(6.dp))
+                Text("افزودن مقصد")
+            }
+            PrimaryButton("ذخیره مقصدها",Icons.Outlined.Save) {onSave(edited)}
         }
     }
+}
 }

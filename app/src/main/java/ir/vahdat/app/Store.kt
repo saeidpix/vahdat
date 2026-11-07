@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import java.util.UUID
+import org.json.JSONArray
 
 data class Waybill(
     val id: String, val origin: String, val destination: String,
@@ -13,9 +14,12 @@ data class Waybill(
     val pieces: Int, val total: Long, val prepaid: Long, val createdAt: Long,
     val receivedAt: Long? = null, val deliveredAt: Long? = null,
     val deliveredTo: String = "", val postCollected: Long = 0L,
-    val originHere: Boolean = true
+    val originHere: Boolean = true,
+    val postFare: Long = (total - prepaid).coerceAtLeast(0L),
+    val storageFee: Long = 0L,
+    val otherFee: Long = 0L
 ) {
-    val due: Long get() = total - prepaid
+    val due: Long get() = postFare + storageFee + otherFee
     val status: String get() = when {
         deliveredAt != null -> "تحویل‌شده"
         receivedAt != null -> "دریافت‌شده"
@@ -23,11 +27,25 @@ data class Waybill(
     }
 }
 
-class CargoStore(context: Context): SQLiteOpenHelper(context, "vahdat-demo.db", null, 1) {
+class CargoStore(context: Context): SQLiteOpenHelper(context, "vahdat-demo.db", null, 2) {
     private val prefs = context.getSharedPreferences("vahdat-settings", Context.MODE_PRIVATE)
-    var branch: String
-        get() = prefs.getString("branch","تهران") ?: "تهران"
-        set(value) { prefs.edit().putString("branch", value.ifBlank { "تهران" }).apply() }
+    // Version 0.2 uses Tehran as the fixed demo origin.
+    val branch: String get() = "تهران"
+    var destinations: List<String>
+        get() {
+            val raw = prefs.getString("destinations", null) ?: return listOf("قائم‌شهر")
+            return try {
+                val array = JSONArray(raw)
+                (0 until array.length()).map { array.optString(it).trim() }
+                    .filter { it.isNotEmpty() }.distinct()
+            } catch (_: Exception) { listOf("قائم‌شهر") }
+        }
+        set(value) {
+            val array = JSONArray()
+            value.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+                .forEach { array.put(it) }
+            prefs.edit().putString("destinations",array.toString()).apply()
+        }
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -35,6 +53,8 @@ class CargoStore(context: Context): SQLiteOpenHelper(context, "vahdat-demo.db", 
             id TEXT PRIMARY KEY, origin TEXT NOT NULL, destination TEXT NOT NULL,
             sender TEXT NOT NULL, receiver TEXT NOT NULL, phone TEXT NOT NULL,
             pieces INTEGER NOT NULL, total INTEGER NOT NULL, prepaid INTEGER NOT NULL,
+            post_fare INTEGER NOT NULL DEFAULT 0, storage_fee INTEGER NOT NULL DEFAULT 0,
+            other_fee INTEGER NOT NULL DEFAULT 0,
             created_at INTEGER NOT NULL, received_at INTEGER, delivered_at INTEGER,
             delivered_to TEXT NOT NULL DEFAULT '', post_collected INTEGER NOT NULL DEFAULT 0,
             origin_here INTEGER NOT NULL
@@ -51,16 +71,27 @@ class CargoStore(context: Context): SQLiteOpenHelper(context, "vahdat-demo.db", 
           )
         """.trimIndent())
     }
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE waybills ADD COLUMN post_fare INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE waybills ADD COLUMN storage_fee INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE waybills ADD COLUMN other_fee INTEGER NOT NULL DEFAULT 0")
+            // Preserve legacy v0.1 total / prepaid information without deleting records.
+            db.execSQL("UPDATE waybills SET post_fare = CASE WHEN total > prepaid THEN total - prepaid ELSE 0 END")
+        }
+    }
 
     fun newWaybill(destination: String, sender: String, receiver: String,
-                   phone: String, pieces: Int, total: Long, prepaid: Long): Waybill {
+                   phone: String, pieces: Int, prepaid: Long, postFare: Long,
+                   storageFee: Long, otherFee: Long): Waybill {
         val now = System.currentTimeMillis()
         val id = "VH-" + now + "-" + UUID.randomUUID().toString().take(6).uppercase()
+        val total = prepaid + postFare + storageFee + otherFee
         val bill = Waybill(id, branch, destination.ifBlank { "نامشخص" },
-           sender, receiver, phone, pieces.coerceAtLeast(1), total, prepaid, now)
+            sender, receiver, phone, pieces.coerceAtLeast(1), total, prepaid, now,
+            postFare = postFare, storageFee = storageFee, otherFee = otherFee)
         check(insert(bill)) { "ثبت بارنامه انجام نشد" }
-        event(id,"ISSUED",prepaid.coerceAtLeast(0),now)
+        event(id,"ISSUED",prepaid,now)
         return bill
     }
 
@@ -69,6 +100,7 @@ class CargoStore(context: Context): SQLiteOpenHelper(context, "vahdat-demo.db", 
             put("id",b.id); put("origin",b.origin); put("destination",b.destination)
             put("sender",b.sender); put("receiver",b.receiver); put("phone",b.phone)
             put("pieces",b.pieces); put("total",b.total); put("prepaid",b.prepaid)
+            put("post_fare",b.postFare); put("storage_fee",b.storageFee); put("other_fee",b.otherFee)
             put("created_at",b.createdAt); put("received_at",b.receivedAt)
             put("delivered_at",b.deliveredAt); put("delivered_to",b.deliveredTo)
             put("post_collected",b.postCollected); put("origin_here",if(b.originHere) 1 else 0)
@@ -136,7 +168,10 @@ class CargoStore(context: Context): SQLiteOpenHelper(context, "vahdat-demo.db", 
         deliveredAt = nullableLong("delivered_at"),
         deliveredTo = getString(getColumnIndexOrThrow("delivered_to")),
         postCollected = getLong(getColumnIndexOrThrow("post_collected")),
-        originHere = getInt(getColumnIndexOrThrow("origin_here")) == 1
+        originHere = getInt(getColumnIndexOrThrow("origin_here")) == 1,
+        postFare = getLong(getColumnIndexOrThrow("post_fare")),
+        storageFee = getLong(getColumnIndexOrThrow("storage_fee")),
+        otherFee = getLong(getColumnIndexOrThrow("other_fee"))
     )
     private fun Cursor.nullableLong(name: String): Long? =
         getColumnIndexOrThrow(name).let { if(isNull(it)) null else getLong(it) }

@@ -26,6 +26,12 @@ fun String.asciiDigits(): String = buildString {
     }
 }
 fun String.amount(): Long = asciiDigits().filter { it in '0'..'9' }.toLongOrNull() ?: 0L
+fun String.groupedAmount(): String {
+    val digits = asciiDigits().filter { it in '0'..'9' }.take(18)
+    if (digits.isEmpty()) return ""
+    val cleaned = digits.trimStart('0').ifEmpty { "0" }
+    return cleaned.reversed().chunked(3).joinToString(",").reversed().persianDigits()
+}
 fun String.persianDigits(): String = map { if (it in '0'..'9') '۰' + (it - '0') else it }.joinToString("")
 fun Long.toman(): String = String.format(Locale.US,"%,d",this).persianDigits() + " تومان"
 fun Int.fa(): String = toString().persianDigits()
@@ -72,9 +78,10 @@ private fun gregorianToJalali(gy: Int, gm: Int, gd: Int): Triple<Int,Int,Int> {
   */
 fun encodeQr(b: Waybill): String {
     val j = JSONObject().apply {
-        put("v",1);put("id",b.id);put("o",b.origin);put("d",b.destination)
+        put("v",2);put("id",b.id);put("o",b.origin);put("d",b.destination)
         put("s",b.sender);put("r",b.receiver);put("p",b.phone)
         put("n",b.pieces);put("t",b.total);put("a",b.prepaid);put("c",b.createdAt)
+        put("k",b.postFare);put("w",b.storageFee);put("x",b.otherFee)
     }
     val bytes = ByteArrayOutputStream()
     GZIPOutputStream(bytes).use { it.write(j.toString().toByteArray(Charsets.UTF_8)) }
@@ -89,14 +96,18 @@ fun decodeQr(data: String): Waybill {
     }
     require(plain.length<25000) { "بارنامه بیش از حد بزرگ است." }
     val j = JSONObject(plain)
-    require(j.getInt("v")==1) { "نسخه QR شناخته‌شده نیست." }
+    val version = j.getInt("v")
+    require(version==1 || version==2) { "نسخه QR شناخته‌شده نیست." }
     val id = j.getString("id")
     require(id.startsWith("VH-") && id.length<90) { "شماره بارنامه نامعتبر است." }
     return Waybill(
         id=id,origin=j.optString("o"),destination=j.optString("d"),
         sender=j.optString("s"),receiver=j.optString("r"),phone=j.optString("p"),
         pieces=j.optInt("n",1).coerceAtLeast(1),total=j.optLong("t"),prepaid=j.optLong("a"),
-        createdAt=j.getLong("c"),originHere=false
+        createdAt=j.getLong("c"),originHere=false,
+        postFare=if(version==2) j.optLong("k") else (j.optLong("t")-j.optLong("a")).coerceAtLeast(0L),
+        storageFee=if(version==2) j.optLong("w") else 0L,
+        otherFee=if(version==2) j.optLong("x") else 0L
     )
 }
 fun qrBitmap(data: String, size: Int = 760): Bitmap {
