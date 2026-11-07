@@ -501,7 +501,7 @@ private fun Reports(bills:List<Waybill>) {
         if(filter==2) return true
         val d=java.time.Instant.ofEpochMilli(millis).atZone(java.time.ZoneId.systemDefault())
         return if(filter==0) d.toLocalDate()==now.toLocalDate()
-        else d.year==now.year && d.month==now.month
+        else solarYearMonth(millis)==solarYearMonth(System.currentTimeMillis())
     }
     val issued=bills.filter{it.originHere && included(it.createdAt)}
     val delivered=bills.filter{included(it.deliveredAt)}
