@@ -1,5 +1,5 @@
 #define MyAppName "اتوبنز وحدت"
-#define MyAppVersion "0.1.1"
+#define MyAppVersion "1.0.0"
 #define MyExeName "VahdatServer.exe"
 
 [Setup]
@@ -11,7 +11,7 @@ DefaultDirName={autopf}\Vahdat
 DefaultGroupName=اتوبنز وحدت
 DisableProgramGroupPage=yes
 OutputDir=..\dist\installer
-OutputBaseFilename=Vahdat-Setup-Windows-v0.1.1
+OutputBaseFilename=Vahdat-Setup-Windows-v1.0.0
 Compression=lzma2
 SolidCompression=yes
 PrivilegesRequired=admin

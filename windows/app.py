@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Vahdat offline Windows LAN demo. No authorization: not for production."""
+"""Vahdat Windows LAN application."""
 import base64, gzip, io, json, os, pathlib, re, socket, sqlite3, sys
 import tempfile, threading, time, uuid, webbrowser
 from datetime import datetime, timedelta, timezone
@@ -20,7 +20,7 @@ FIELDS = ("id","origin","destination","sender","receiver","phone","pieces",
           "received_at","delivered_at","delivered_to","post_collected","origin_here")
 
 def connect():
-    conn=sqlite3.connect(str(DB),timeout=30,isolation_level=None)
+    conn=sqlite3.connect(str(DB),timeout=30)
     conn.row_factory=sqlite3.Row
     conn.execute("PRAGMA busy_timeout=10000")
     return conn
@@ -28,6 +28,15 @@ def connect():
 def init():
     c=connect()
     try:
+        # SQLite backup includes committed WAL data. Never copy an open database file.
+        existed=c.execute("SELECT 1 FROM sqlite_master WHERE name='waybills'").fetchone()
+        columns=[r[1] for r in c.execute("PRAGMA table_info(waybills)")]
+        if existed and 'number' not in columns:
+            folder=DATA/'backups'
+            folder.mkdir(parents=True,exist_ok=True)
+            target=sqlite3.connect(folder/('before-1.0.0-'+str(time.time_ns())+'.sqlite3'))
+            try:c.backup(target)
+            finally:target.close()
         c.execute("PRAGMA journal_mode=WAL")
         c.executescript("""
         CREATE TABLE IF NOT EXISTS waybills (
@@ -47,8 +56,16 @@ def init():
           event_id INTEGER PRIMARY KEY AUTOINCREMENT, waybill_id TEXT NOT NULL,
           kind TEXT NOT NULL, amount INTEGER NOT NULL, happened_at INTEGER NOT NULL);
         """)
+        c.execute('BEGIN IMMEDIATE')
+        if 'number' not in columns:
+            c.execute('ALTER TABLE waybills ADD COLUMN number INTEGER')
+            for n,r in enumerate(c.execute('SELECT id FROM waybills ORDER BY created_at,id').fetchall(),1):
+                c.execute('UPDATE waybills SET number=? WHERE id=?',(n,r['id']))
+        c.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_number ON waybills(number)')
+        c.execute('PRAGMA user_version=1')
         c.execute("INSERT OR IGNORE INTO settings(name,value) VALUES('destinations',?)",
                   (json.dumps(["قائم‌شهر"],ensure_ascii=False),))
+        c.commit()
     finally:c.close()
 
 def to_jalali(gy,gm,gd):
@@ -131,10 +148,15 @@ def error(msg,code=400):return jsonify(error=msg),code
 def home():return send_from_directory(str(ROOT),"ui.html",mimetype="text/html")
 
 @app.get("/logo.png")
-def logo():return send_from_directory(str(ROOT),"logo.png",mimetype="image/png")
+def logo():
+    folder=ROOT if (ROOT/'logo.png').exists() else ROOT.parent/'app/src/main/res/drawable'
+    return send_from_directory(str(folder),'logo.png' if folder==ROOT else 'brand_logo.png',mimetype="image/png")
+
+@app.get('/assets/<path:name>')
+def assets(name):return send_from_directory(str(ROOT/'assets'),name)
 
 @app.get("/api/health")
-def health():return jsonify(ok=True,version="0.1.1",host=socket.gethostname())
+def health():return jsonify(ok=True,version="1.0.0",host=socket.gethostname())
 
 @app.get("/api/settings")
 def settings():
@@ -174,20 +196,23 @@ def create():
     c=connect()
     try:
         with c:
+            c.execute('BEGIN IMMEDIATE')
+            b['number']=c.execute('SELECT COALESCE(MAX(number),0)+1 FROM waybills').fetchone()[0]
             c.execute("INSERT INTO waybills("+",".join(FIELDS)+") VALUES("+",".join("?" for _ in FIELDS)+")",tuple(b[k] for k in FIELDS))
+            c.execute('UPDATE waybills SET number=? WHERE id=?',(b['number'],b['id']))
             log(c,b["id"],"ISSUED",pre)
         return jsonify(waybill=bill(b)),201
     finally:c.close()
 
 @app.get("/api/waybills")
 def listings():
-    q=request.args.get("q","")[:120]
+    q=request.args.get("q","")[:120].translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789'))
     c=connect()
     try:
         if q:
             rows=c.execute("""SELECT * FROM waybills WHERE id LIKE ? OR sender LIKE ?
-                OR receiver LIKE ? OR phone LIKE ? ORDER BY created_at DESC LIMIT 300""",
-                tuple("%"+q+"%" for _ in range(4))).fetchall()
+                OR receiver LIKE ? OR phone LIKE ? OR CAST(number AS TEXT) LIKE ? ORDER BY created_at DESC,number DESC LIMIT 300""",
+                tuple("%"+q+"%" for _ in range(5))).fetchall()
         else:rows=c.execute("SELECT * FROM waybills ORDER BY created_at DESC LIMIT 300").fetchall()
         return jsonify(items=[bill(x) for x in rows])
     finally:c.close()
@@ -218,10 +243,14 @@ def imported():
     c=connect()
     try:
         with c:
+            c.execute('BEGIN IMMEDIATE')
             result=c.execute("INSERT OR IGNORE INTO waybills("+",".join(FIELDS)+") VALUES("+",".join("?" for _ in FIELDS)+")",
                  tuple(b[k] for k in FIELDS))
             fresh=result.rowcount>0
-            if fresh:log(c,b["id"],"IMPORTED")
+            if fresh:
+                n=c.execute('SELECT COALESCE(MAX(number),0)+1 FROM waybills').fetchone()[0]
+                c.execute('UPDATE waybills SET number=? WHERE id=?',(n,b['id']))
+                log(c,b["id"],"IMPORTED")
             r=one(c,b["id"])
         return jsonify(waybill=bill(r),fresh=fresh)
     finally:c.close()
@@ -289,12 +318,12 @@ def backup():
     return send_file(fn,as_attachment=True,download_name="Vahdat-backup.sqlite3")
 
 def run():
-    init()
     with socket.socket() as check:
         check.settimeout(.4)
         if check.connect_ex(("127.0.0.1",PORT))==0:
             webbrowser.open(f"http://127.0.0.1:{PORT}")
             return
+    init()
     threading.Timer(2.0,lambda:webbrowser.open(f"http://127.0.0.1:{PORT}")).start()
     serve(app,host="0.0.0.0",port=PORT,threads=8)
 

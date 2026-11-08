@@ -3,3 +3,10 @@
 local.properties
 **/build/
 *.apk
+
+__pycache__/
+browser-results/
+dist/
+windows/assets/logo.png
+windows/assets/logo.ico
+*.spec

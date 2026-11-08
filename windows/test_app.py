@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64, gzip, json, os, pathlib, sys, tempfile, unittest
 from unittest.mock import patch
+from contextlib import closing
 
 ROOT=pathlib.Path(__file__).parent
 sys.path.insert(0,str(ROOT))
@@ -9,10 +10,63 @@ os.environ["PROGRAMDATA"]=TMP.name
 import app as v
 
 class VahdatTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        v.DATA=pathlib.Path(self.tmp.name)
+        v.DB=v.DATA/'vahdat.sqlite3'
         v.init()
-        cls.client=v.app.test_client()
+        self.client=v.app.test_client()
+
+    def test_numbering_concurrent_and_restart(self):
+        from concurrent.futures import ThreadPoolExecutor
+        def issue(_):
+            with v.app.test_client() as c:
+                r=c.post('/api/waybills',json={'destination':'قائم‌شهر'})
+                self.assertEqual(r.status_code,201)
+                return r.json['waybill']['number']
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            numbers=list(pool.map(issue,range(24)))
+        self.assertEqual(sorted(numbers),list(range(1,25)))
+        v.init()
+        self.assertEqual(issue(None),25)
+        self.assertTrue(self.client.get('/api/waybills?q=۲۵').json['items'])
+
+    def test_upgrade_backup_and_legacy_qr(self):
+        b=self.client.post('/api/waybills',json={'prepaid':123,'receiver':'قدیمی'}).json['waybill']
+        raw=v.encode_qr(b)
+        with closing(v.connect()) as c:
+            c.execute('DROP INDEX idx_number')
+            c.execute('ALTER TABLE waybills DROP COLUMN number')
+            c.commit()
+        v.init()
+        files=list((v.DATA/'backups').glob('*.sqlite3'))
+        self.assertEqual(len(files),1)
+        import sqlite3
+        with closing(sqlite3.connect(files[0])) as c:
+            self.assertEqual(c.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+            self.assertEqual(c.execute('SELECT id,prepaid FROM waybills').fetchone(),(b['id'],123))
+            self.assertNotIn('number',[r[1] for r in c.execute('PRAGMA table_info(waybills)')])
+        kept=self.client.get('/api/waybills/'+b['id']).json['waybill']
+        self.assertEqual(kept['number'],1)
+        self.assertEqual(v.encode_qr(kept),raw)
+        self.assertFalse(self.client.post('/api/import',json={'qr':raw}).json['fresh'])
+        v.init()
+        self.assertEqual(len(list((v.DATA/'backups').glob('*.sqlite3'))),1)
+
+    def test_backup_and_real_totals(self):
+        self.assertEqual(self.client.get('/api/reports?period=all').json['total'],0)
+        self.client.post('/api/waybills',json={'prepaid':'۱٬۰۰۰','post_fare':'۲٬۰۰۰','storage_fee':300,'other_fee':400})
+        self.assertEqual(self.client.get('/api/reports?period=all').json['total'],3700)
+        r=self.client.get('/api/backup')
+        self.assertEqual(r.status_code,200)
+        path=v.DATA/'download.sqlite3'
+        path.write_bytes(r.data)
+        r.close()
+        import sqlite3
+        with closing(sqlite3.connect(path)) as c:
+            self.assertEqual(c.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+            self.assertEqual(c.execute('SELECT number,total FROM waybills').fetchone(),(1,3700))
 
     def test_jalali_and_seconds(self):
         import datetime
