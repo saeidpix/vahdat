@@ -134,7 +134,7 @@ def home():return send_from_directory(str(ROOT),"ui.html",mimetype="text/html")
 def logo():return send_from_directory(str(ROOT),"logo.png",mimetype="image/png")
 
 @app.get("/api/health")
-def health():return jsonify(ok=True,version="0.1.0",host=socket.gethostname())
+def health():return jsonify(ok=True,version="0.1.1",host=socket.gethostname())
 
 @app.get("/api/settings")
 def settings():
