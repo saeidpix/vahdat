@@ -57,14 +57,13 @@ const context = vm.createContext({
 });
 async function smoke() {
   script.runInContext(context);
-  // Allow initial settings request to resolve.
-  await Promise.resolve();
-  await Promise.resolve();
+  // The startup IIFE awaits fetch in a separate VM realm; settle it fully first.
+  await new Promise((resolve) => setTimeout(resolve, 30));
   await context.go("home");
   assert(element("page").innerHTML.includes("صدور بارنامه"), "Home buttons not rendered");
 
   await context.go("new");
-  assert(element("page").innerHTML.includes("جمع کل کرایه"), "Issuing form did not render");
+  assert(element("page").innerHTML.includes("جمع کل کرایه"), "Issuing form did not render: "+errors.join(" | ")+" / "+element("page").innerHTML.slice(0,120));
   assert(element("page").innerHTML.includes("قائم‌شهر"), "Single destination missing");
   assert(element("page").innerHTML.includes("سایر هزینه‌ها"), "4-part fare is incomplete");
 
