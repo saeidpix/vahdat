@@ -23,6 +23,7 @@ function element(id) {
       innerHTML: "",
       value: "",
       focused: false,
+      setAttribute(name, value) { this[name] = value; },
       focus() { this.focused = true; },
       addEventListener(event, cb) { this[event] = cb; }
     });

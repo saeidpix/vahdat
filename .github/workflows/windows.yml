@@ -55,11 +55,11 @@ jobs:
               Start-Sleep -Seconds 1
               try {
                 $health = Invoke-RestMethod http://127.0.0.1:8765/api/health
-                if ($health.version -eq '1.0.0') { $ready = $true; break }
+                if ($health.version -eq '1.1.0') { $ready = $true; break }
               } catch {}
             }
             if (-not $ready) { throw "Packaged server did not start" }
-            foreach ($path in @('/', '/logo.png', '/assets/samand.png')) {
+            foreach ($path in @('/', '/logo.png', '/assets/samand.png', '/assets/icons.svg', '/assets/Vazirmatn.woff2')) {
               $response = Invoke-WebRequest ("http://127.0.0.1:8765" + $path)
               if ($response.StatusCode -ne 200) { throw "Packaged asset missing: $path" }
             }
@@ -80,9 +80,9 @@ jobs:
         shell: pwsh
         run: |
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "windows/install.iss"
-          if (-not (Test-Path "dist/installer/Vahdat-Setup-Windows-v1.0.0.exe")) { throw "Setup missing" }
+          if (-not (Test-Path "dist/installer/Vahdat-Setup-Windows-v1.1.0.exe")) { throw "Setup missing" }
       - uses: actions/upload-artifact@v4
         with:
-          name: Vahdat-Windows-Installer-v1.0.0
-          path: dist/installer/Vahdat-Setup-Windows-v1.0.0.exe
+          name: Vahdat-Windows-Installer-v1.1.0
+          path: dist/installer/Vahdat-Setup-Windows-v1.1.0.exe
           if-no-files-found: error

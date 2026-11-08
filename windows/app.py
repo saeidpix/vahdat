@@ -156,7 +156,7 @@ def logo():
 def assets(name):return send_from_directory(str(ROOT/'assets'),name)
 
 @app.get("/api/health")
-def health():return jsonify(ok=True,version="1.0.0",host=socket.gethostname())
+def health():return jsonify(ok=True,version="1.1.0",host=socket.gethostname())
 
 @app.get("/api/settings")
 def settings():
