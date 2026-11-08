@@ -29,6 +29,9 @@ jobs:
           New-Item -ItemType Directory -Force windows/assets | Out-Null
           Copy-Item app/src/main/res/drawable/brand_logo.png windows/assets/logo.png
           python -c "from PIL import Image; Image.open('windows/assets/logo.png').convert('RGBA').save('windows/assets/logo.ico',format='ICO',sizes=[(16,16),(32,32),(48,48),(64,64),(128,128)])"
+      - name: Verify JavaScript syntax and page interactions
+        shell: pwsh
+        run: node windows/test_ui.cjs
       - name: Run Windows functional tests
         shell: pwsh
         run: python -m unittest discover -s windows -p test_*.py -v
@@ -48,9 +51,9 @@ jobs:
         shell: pwsh
         run: |
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "windows/install.iss"
-          if (-not (Test-Path "dist/installer/Vahdat-Setup-Windows-v0.1.exe")) { throw "Setup missing" }
+          if (-not (Test-Path "dist/installer/Vahdat-Setup-Windows-v0.1.1.exe")) { throw "Setup missing" }
       - uses: actions/upload-artifact@v4
         with:
-          name: Vahdat-Windows-Installer-v0.1
-          path: dist/installer/Vahdat-Setup-Windows-v0.1.exe
+          name: Vahdat-Windows-Installer-v0.1.1
+          path: dist/installer/Vahdat-Setup-Windows-v0.1.1.exe
           if-no-files-found: error
