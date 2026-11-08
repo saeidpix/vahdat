@@ -68,6 +68,11 @@ class VahdatTests(unittest.TestCase):
             self.assertEqual(c.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertEqual(c.execute('SELECT number,total FROM waybills').fetchone(),(1,3700))
 
+    def test_search_preserves_persian_phone(self):
+        self.client.post('/api/waybills',json={'phone':'۰۹۱۲۱۲۳۴۵۶۷'})
+        self.assertEqual(len(self.client.get('/api/waybills?q=۰۹۱۲').json['items']),1)
+        self.assertEqual(self.client.get('/api/waybills?q=۱').json['items'][0]['number'],1)
+
     def test_jalali_and_seconds(self):
         import datetime
         millis=int(datetime.datetime(2026,11,8,8,9,10,

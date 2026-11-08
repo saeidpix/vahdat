@@ -206,13 +206,14 @@ def create():
 
 @app.get("/api/waybills")
 def listings():
-    q=request.args.get("q","")[:120].translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789'))
+    q=request.args.get("q","")[:120]
+    numeric_q=q.translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789'))
     c=connect()
     try:
         if q:
             rows=c.execute("""SELECT * FROM waybills WHERE id LIKE ? OR sender LIKE ?
                 OR receiver LIKE ? OR phone LIKE ? OR CAST(number AS TEXT) LIKE ? ORDER BY created_at DESC,number DESC LIMIT 300""",
-                tuple("%"+q+"%" for _ in range(5))).fetchall()
+                tuple("%"+q+"%" for _ in range(4))+("%"+numeric_q+"%",)).fetchall()
         else:rows=c.execute("SELECT * FROM waybills ORDER BY created_at DESC LIMIT 300").fetchall()
         return jsonify(items=[bill(x) for x in rows])
     finally:c.close()

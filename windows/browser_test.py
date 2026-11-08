@@ -28,8 +28,9 @@ try:
         expect(page.locator('h2')).to_have_text('خانه')
         expect(page.locator('.tile')).to_have_count(4)
         assert page.locator('.tile small').count()==0
-        assert page.locator('.taxi').evaluate('(e)=>e.complete&&e.naturalWidth>0')
-        assert page.locator('.logo').evaluate('(e)=>e.complete&&e.naturalWidth>0')
+        for image in ['.taxi','.logo']:
+            expect(page.locator(image)).to_have_js_property('complete',True)
+            assert page.locator(image).evaluate('(e)=>e.naturalWidth>0')
         page.screenshot(path=str(shots/'home.png'),full_page=True)
         page.locator('#nav-reports').click()
         expect(page.locator('h2')).to_have_text('گزارش مالی')
@@ -38,7 +39,8 @@ try:
         expect(page.locator('#newdest')).to_be_visible()
         page.locator('#newdest').fill('ساری')
         page.get_by_role('button',name='افزودن مقصد',exact=True).click()
-        page.get_by_role('button',name='ذخیره مقصدها',exact=True).click()
+        with page.expect_response(lambda r:r.url.endswith('/api/settings') and r.request.method=='POST'):
+            page.get_by_role('button',name='ذخیره مقصدها',exact=True).click()
         page.reload()
         page.locator('#nav-new').click()
         expect(page.locator('#destination')).to_have_value('قائم‌شهر')
