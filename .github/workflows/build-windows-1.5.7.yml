@@ -1,0 +1,154 @@
+name: Build Vahdat 1.5.7 Windows Setup
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build/windows-installer-1.5.7
+    paths:
+      - '.github/workflows/build-windows-1.5.7.yml'
+      - 'build-source/Vahdat-v1.5.7.zip'
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    timeout-minutes: 55
+    steps:
+      - name: Checkout build source
+        uses: actions/checkout@v4
+
+      - name: Unpack exact Vahdat 1.5.7 source archive
+        shell: pwsh
+        run: |
+          Expand-Archive -LiteralPath "build-source/Vahdat-v1.5.7.zip" -DestinationPath "." -Force
+          if (-not (Test-Path "Vahdat-1.5.7/windows/app.py")) { throw "1.5.7 source archive did not contain app.py" }
+          if (-not (Test-Path "Vahdat-1.5.7/windows/install.iss")) { throw "Installer script missing" }
+
+      - name: Set Python 3.11 x64
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: x64
+
+      - name: Correct packaged version and local build bootstrap
+        shell: pwsh
+        run: |
+          Set-Location "Vahdat-1.5.7"
+          $utf8 = [System.Text.UTF8Encoding]::new($false)
+          foreach ($path in @("windows/app.py", "windows/sync_engine.py", "windows/install.iss", "BUILD-WINDOWS.ps1")) {
+            $data = [System.IO.File]::ReadAllText((Join-Path (Get-Location) $path))
+            $data = $data.Replace("1.5.6-beta", "1.5.7-beta")
+            if ($path -eq "windows/install.iss") {
+              $data = $data.Replace('#define MyAppVersion "1.5.6"', '#define MyAppVersion "1.5.7"')
+            }
+            if ($path -eq "BUILD-WINDOWS.ps1") {
+              $data = $data -replace '(?m)^& \$pythonExe -m pip install --upgrade pip\r?\nif \(\$LASTEXITCODE -ne 0\) \{ throw ''pip bootstrap failed'' \}\r?\n',''
+            }
+            [System.IO.File]::WriteAllText((Join-Path (Get-Location) $path), $data, $utf8)
+          }
+          if (-not ((Get-Content windows/app.py -Raw).Contains('version="1.5.7-beta"'))) { throw "Version patch failed" }
+
+      - name: Install dependencies without mandatory pip upgrade
+        shell: pwsh
+        run: |
+          Set-Location "Vahdat-1.5.7"
+          python -m pip install --no-input -r windows/requirements.txt pyinstaller==6.16.0 playwright==1.56.0
+          if ($LASTEXITCODE -ne 0) { throw "Python dependency installation failed" }
+          python -m playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw "Chromium installation failed" }
+
+      - name: Run static JS and Python tests
+        shell: pwsh
+        run: |
+          Set-Location "Vahdat-1.5.7"
+          node windows/test_ui.cjs
+          if ($LASTEXITCODE -ne 0) { throw "UI JavaScript test failed" }
+          node windows/test_settings_156.cjs
+          if ($LASTEXITCODE -ne 0) { throw "Settings JavaScript test failed" }
+          python -m unittest discover -s windows -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw "Python tests failed" }
+          python windows/browser_test.py
+          if ($LASTEXITCODE -ne 0) { throw "Browser interaction tests failed" }
+
+      - name: Make icon and build standalone EXE
+        shell: pwsh
+        run: |
+          Set-Location "Vahdat-1.5.7"
+          Copy-Item "app/src/main/res/drawable/brand_logo.png" "windows/assets/logo.png" -Force
+          python -c "from PIL import Image; Image.open('windows/assets/logo.png').convert('RGBA').save('windows/assets/logo.ico',format='ICO',sizes=[(16,16),(32,32),(48,48),(64,64),(128,128)])"
+          if ($LASTEXITCODE -ne 0) { throw "Icon generation failed" }
+          python -m PyInstaller --noconfirm --clean --onefile --noconsole --name VahdatServer --icon "windows/assets/logo.ico" --add-data "windows/ui.html;." --add-data "windows/financial-report-print.html;." --add-data "windows/assets/logo.png;." --add-data "windows/assets;assets" "windows/app.py"
+          if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed" }
+          if (-not (Test-Path "dist/VahdatServer.exe")) { throw "Standalone executable not produced" }
+
+      - name: Smoke test packaged EXE and assets
+        shell: pwsh
+        run: |
+          Set-Location "Vahdat-1.5.7"
+          $env:PROGRAMDATA = Join-Path $env:RUNNER_TEMP "vahdat-157-testdata"
+          New-Item -ItemType Directory -Force $env:PROGRAMDATA | Out-Null
+          $proc = Start-Process -FilePath (Resolve-Path "dist/VahdatServer.exe") -PassThru -WindowStyle Hidden
+          try {
+            $ready = $false
+            for ($i=0; $i -lt 45; $i++) {
+              Start-Sleep -Seconds 1
+              try {
+                $response = Invoke-RestMethod "http://127.0.0.1:8765/api/health" -TimeoutSec 2
+                if ($response.version -eq "1.5.7-beta") { $ready = $true; break }
+              } catch {}
+            }
+            if (-not $ready) { throw "Packaged server health check did not return version 1.5.7-beta" }
+            foreach ($path in @("/", "/logo.png", "/reports/print", "/assets/financial-report-print.js", "/assets/financial-report-print.css", "/assets/samand.png", "/assets/icons.svg", "/assets/Vazirmatn.woff2", "/assets/settings.css", "/assets/settings-ui.js")) {
+              $res = Invoke-WebRequest -Uri ("http://127.0.0.1:8765" + $path) -TimeoutSec 10
+              if ($res.StatusCode -ne 200) { throw "Required bundled asset failed: $path" }
+            }
+          } finally {
+            Stop-Process -Id $proc.Id -ErrorAction SilentlyContinue
+          }
+
+      - name: Install Inno Setup compiler
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ([Environment]::GetFolderPath("ProgramFilesX86")) "Inno Setup 6/ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "Inno Setup install failed" }
+          }
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler missing" }
+
+      - name: Build Windows Setup installer
+        shell: pwsh
+        run: |
+          Set-Location "Vahdat-1.5.7"
+          $iscc = Join-Path ([Environment]::GetFolderPath("ProgramFilesX86")) "Inno Setup 6/ISCC.exe"
+          & $iscc "windows/install.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+          $setup = "dist/installer/Vahdat-Setup-Windows-v1.5.7-beta.exe"
+          if (-not (Test-Path $setup)) { throw "Setup EXE missing" }
+          Get-FileHash $setup -Algorithm SHA256 | Format-List
+          Get-FileHash "dist/VahdatServer.exe" -Algorithm SHA256 | Format-List
+
+      - name: Upload Setup.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vahdat-Setup-Windows-v1.5.7-beta
+          path: Vahdat-1.5.7/dist/installer/Vahdat-Setup-Windows-v1.5.7-beta.exe
+          if-no-files-found: error
+
+      - name: Upload standalone EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vahdat-Portable-Windows-v1.5.7-beta
+          path: Vahdat-1.5.7/dist/VahdatServer.exe
+          if-no-files-found: error
+
+      - name: Save browser test screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Vahdat-1.5.7-Browser-Test-Results
+          path: Vahdat-1.5.7/browser-results/
+          if-no-files-found: ignore
