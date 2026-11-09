@@ -1,0 +1,147 @@
+name: Build Windows 7 Qaemshahr PILOT (x86)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build/win7-qaemshahr-pilot
+    paths:
+      - '.github/workflows/build-win7-qaemshahr.yml'
+      - 'win7-pilot/**'
+      - 'build-source/Vahdat-v1.5.7.zip'
+
+permissions:
+  contents: read
+
+jobs:
+  win7-pilot:
+    runs-on: windows-2022
+    timeout-minutes: 55
+    steps:
+      - name: Checkout full source and pilot scripts
+        uses: actions/checkout@v4
+
+      - name: Unpack Vahdat source
+        shell: pwsh
+        run: |
+          Expand-Archive -LiteralPath 'build-source/Vahdat-v1.5.7.zip' -DestinationPath '.' -Force
+          if (-not (Test-Path 'Vahdat-1.5.7/windows/app.py')) { throw 'Source missing' }
+          if (-not (Test-Path 'Vahdat-1.5.7/windows/install.iss')) { throw 'Installer missing' }
+
+      - name: Use 32-bit Python 3.8 for Windows 7
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8.10'
+          architecture: x86
+
+      - name: Install Python 3.8 compatible pinned dependencies
+        shell: pwsh
+        run: |
+          python -c "import platform,sys; print(sys.version); print(platform.architecture()); assert sys.version_info[:2] == (3,8); assert platform.architecture()[0]=='32bit'"
+          python -m pip install --no-input --only-binary=:all: 'flask==2.3.3' 'werkzeug==2.3.8' 'waitress==2.1.2' 'qrcode[pil]==7.4.2' 'pillow==10.4.0' 'pyinstaller==5.13.2'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot install Python 3.8 x86 dependencies' }
+          python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency conflict' }
+
+      - name: Run original source regression tests
+        shell: pwsh
+        run: |
+          Set-Location 'Vahdat-1.5.7'
+          python -m unittest discover -s windows -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Base Python tests failed' }
+          node windows/test_ui.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Base JS tests failed' }
+          node windows/test_settings_156.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Settings JS tests failed' }
+
+      - name: Create isolated Qaemshahr pilot build
+        shell: pwsh
+        run: |
+          python win7-pilot/prepare.py
+          if ($LASTEXITCODE -ne 0) { throw 'Pilot patch failed' }
+          python -m py_compile Vahdat-1.5.7/windows/app.py Vahdat-1.5.7/windows/operations.py Vahdat-1.5.7/windows/sync_engine.py
+          if ($LASTEXITCODE -ne 0) { throw 'Pilot syntax failed' }
+          python win7-pilot/test_pilot.py
+          if ($LASTEXITCODE -ne 0) { throw 'Pilot isolation tests failed' }
+
+      - name: Build 32-bit portable EXE
+        shell: pwsh
+        run: |
+          Set-Location 'Vahdat-1.5.7'
+          Copy-Item 'app/src/main/res/drawable/brand_logo.png' 'windows/assets/logo.png' -Force
+          python -c "from PIL import Image; Image.open('windows/assets/logo.png').convert('RGBA').save('windows/assets/logo.ico',format='ICO',sizes=[(16,16),(32,32),(48,48),(64,64),(128,128)])"
+          if ($LASTEXITCODE -ne 0) { throw 'Pilot icon failed' }
+          python -m PyInstaller --noconfirm --clean --onefile --noconsole --name VahdatQaemshahrPilot --icon 'windows/assets/logo.ico' --add-data 'windows/ui.html;.' --add-data 'windows/financial-report-print.html;.' --add-data 'windows/assets/logo.png;.' --add-data 'windows/assets;assets' windows/app.py
+          if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed' }
+          $exe = 'dist/VahdatQaemshahrPilot.exe'
+          if (-not (Test-Path $exe)) { throw 'Missing pilot EXE' }
+          $bytes = [IO.File]::ReadAllBytes((Resolve-Path $exe))
+          $offset = [BitConverter]::ToInt32($bytes, 0x3c)
+          $machine = [BitConverter]::ToUInt16($bytes, $offset + 4)
+          if ($machine -ne 0x14c) { throw "Expected x86 binary; got $machine" }
+          Get-FileHash $exe -Algorithm SHA256
+
+      - name: Smoke test packaged executable on Windows
+        shell: pwsh
+        run: |
+          Set-Location 'Vahdat-1.5.7'
+          $env:PROGRAMDATA = Join-Path $env:RUNNER_TEMP 'vahdat-win7-q-test'
+          New-Item -ItemType Directory -Force -Path $env:PROGRAMDATA | Out-Null
+          $proc = Start-Process -FilePath (Resolve-Path 'dist/VahdatQaemshahrPilot.exe') -PassThru -WindowStyle Hidden
+          try {
+            $healthy = $false
+            for ($i = 0; $i -lt 45; $i++) {
+              Start-Sleep -Seconds 1
+              try {
+                $health = Invoke-RestMethod 'http://127.0.0.1:8877/api/health' -TimeoutSec 2
+                if ($health.version -eq '1.5.7-win7-qaemshahr-pilot') { $healthy = $true; break }
+              } catch { }
+            }
+            if (-not $healthy) { throw 'Pilot EXE did not boot correctly' }
+            foreach ($path in @('/', '/logo.png', '/reports/print', '/assets/samand.png', '/assets/settings.css')) {
+              $response = Invoke-WebRequest ('http://127.0.0.1:8877' + $path) -TimeoutSec 10 -UseBasicParsing
+              if ($response.StatusCode -ne 200) { throw "Missing pilot asset $path" }
+            }
+            if (-not (Test-Path (Join-Path $env:PROGRAMDATA 'VahdatPilotQaemshahr/vahdat.sqlite3'))) {
+              throw 'Pilot data was not isolated'
+            }
+          } finally {
+            Stop-Process -Id $proc.Id -ErrorAction SilentlyContinue
+          }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Inno Setup 6/ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup download failed' }
+          }
+          if (-not (Test-Path $iscc)) { throw 'ISCC.exe missing' }
+
+      - name: Compile Windows 7 pilot Setup
+        shell: pwsh
+        run: |
+          Set-Location 'Vahdat-1.5.7'
+          $iscc = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Inno Setup 6/ISCC.exe'
+          & $iscc 'windows/install.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compiler failed' }
+          $out = 'dist/installer/Vahdat-Setup-Win7-Qaemshahr-PILOT-v1.5.7.exe'
+          if (-not (Test-Path $out)) { throw 'Setup not produced' }
+          Get-FileHash $out -Algorithm SHA256
+
+      - name: Upload test Setup
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vahdat-Win7-Qaemshahr-TEST-Setup
+          path: Vahdat-1.5.7/dist/installer/Vahdat-Setup-Win7-Qaemshahr-PILOT-v1.5.7.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload test Portable EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vahdat-Win7-Qaemshahr-TEST-Portable
+          path: Vahdat-1.5.7/dist/VahdatQaemshahrPilot.exe
+          if-no-files-found: error
+          retention-days: 30
