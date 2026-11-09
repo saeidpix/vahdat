@@ -28,6 +28,7 @@ from PyQt5.QtWebEngineWidgets import (
     QWebEngineView, QWebEnginePage, QWebEngineProfile
 )
 from PyQt5.QtWebEngineCore import QWebEngineUrlRequestInterceptor
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 from waitress import create_server
 
 import app as backend
@@ -221,6 +222,10 @@ class DesktopWindow(QMainWindow):
         self.web = QWebEngineView()
         self.page = RestrictedPage(self.profile, port, self.web)
         self.web.setPage(self.page)
+        # The restored original UI calls window.print() for its A4 waybills.
+        # Qt WebEngine requires an explicit bridge to the native print dialog.
+        self.printer = QPrinter(QPrinter.HighResolution)
+        self.page.printRequested.connect(self.print_current_page)
         v.addWidget(self.web, stretch=1)
         self.web.load(QUrl("http://127.0.0.1:{}/".format(port)))
         self.label_update()
@@ -228,6 +233,15 @@ class DesktopWindow(QMainWindow):
         timer.timeout.connect(self.label_update)
         timer.start(18000)
         self.timer = timer
+
+    def print_current_page(self):
+        dialog = QPrintDialog(self.printer, self)
+        dialog.setWindowTitle("چاپ بارنامه اتوبنز وحدت")
+        if dialog.exec_() == QDialog.Accepted:
+            # Keep self.printer alive until asynchronous WebEngine printing finishes.
+            self.page.print(self.printer, lambda ok:
+                None if ok else QMessageBox.warning(self, "چاپ بارنامه",
+                    "چاپ کامل نشد؛ تنظیمات چاپگر را بررسی کنید."))
 
     def label_update(self):
         try:
