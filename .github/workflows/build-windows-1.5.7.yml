@@ -79,6 +79,8 @@ jobs:
           $t = Get-Content "windows/browser_test.py" -Raw
           $t = $t.Replace("page.locator('#on_issue').check()", "page.locator('label.settings-print-choice[for=on_issue]').click()")
           $t = $t.Replace("page.locator('#nav-'+name).click()", "page.evaluate('(name) => go(name)',name)")
+          # Disable print-on-receive during scan tests; afterprint can re-render the scan form.
+          $t = $t.Replace("  page.locator('#nav-scan').click()", "  page.locator('#nav-scan').click()`n  page.evaluate('printOptions.on_receive = false')")
           [System.IO.File]::WriteAllText((Join-Path (Get-Location) "windows/browser_test.py"), $t, [System.Text.UTF8Encoding]::new($false))
           python windows/browser_test.py
           if ($LASTEXITCODE -ne 0) { throw "Browser interaction tests failed" }
