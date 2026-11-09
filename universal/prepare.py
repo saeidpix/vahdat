@@ -53,8 +53,8 @@ ops = replace_once(ops,
     "ROLES=['superadmin','admin','issuance','warehouse','accountant','viewer']",
     "role list")
 ops = replace_once(ops,
-    "uid,name,mobile,password_hash,role,created_at) VALUES(?,?,?,?,?,?)',\n                      (uid,name,mobile,password_hash(pwd),'admin',now()))",
-    "uid,name,mobile,password_hash,role,created_at) VALUES(?,?,?,?,?,?)',\n                      (uid,name,mobile,password_hash(pwd),'superadmin',now()))",
+    "(uid,name,mobile,password_hash(pwd),'admin',now()))",
+    "(uid,name,mobile,password_hash(pwd),'superadmin',now()))",
     "bootstrap becomes superadmin")
 ops = replace_once(ops,
     "        perms=d.get('permissions',None)\n",
