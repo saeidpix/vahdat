@@ -70,6 +70,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Settings JavaScript test failed" }
           python -m unittest discover -s windows -p 'test_*.py' -v
           if ($LASTEXITCODE -ne 0) { throw "Python tests failed" }
+          # The 1.5.6 settings UI uses a styled label around a hidden checkbox.
+          # A responsive view may hide certain desktop-only navigation buttons.
+          $t = Get-Content "windows/browser_test.py" -Raw
+          $t = $t.Replace("page.locator('#on_issue').check()", "page.locator('label.settings-print-choice[for=on_issue]').click()")
+          $t = $t.Replace("page.locator('#nav-'+name).click()", "page.evaluate('(name) => go(name)',name)")
+          [System.IO.File]::WriteAllText((Join-Path (Get-Location) "windows/browser_test.py"), $t, [System.Text.UTF8Encoding]::new($false))
           python windows/browser_test.py
           if ($LASTEXITCODE -ne 0) { throw "Browser interaction tests failed" }
 
