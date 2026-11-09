@@ -40,6 +40,10 @@ class InventoryAndRecoveryTests(unittest.TestCase):
         cls.temp.cleanup()
 
     def test_inventory_reconciles_warehouse_and_excludes_delivered(self):
+        # Isolate warehouse counting from earlier test-injected recovery rows.
+        with app.connect() as c:
+            c.execute("DELETE FROM waybills")
+            c.execute("DELETE FROM sync_conflicts")
         t=int(time.time()*1000)
         with app.connect() as c:
             for suffix,received,delivered in [('1',None,None),('2',t,None),('3',t,t+1)]:
