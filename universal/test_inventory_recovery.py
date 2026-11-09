@@ -58,6 +58,7 @@ class InventoryAndRecoveryTests(unittest.TestCase):
         self.assertNotEqual(d["in_stock"][0]["status"],"تحویل‌شده")
 
     def test_conflict_replay_repairs_valid_and_preserves_bad(self):
+        secret_store.save_config(app.DATA,"qaemshahr","TEST-ONLY-CI-KEY-0123456789012345678901234567",enabled=True)
         t=int(time.time()*1000)
         key="VH-1760000000000-RECOV1"
         b=dict(id=key,origin="تهران",destination="قائم‌شهر",
