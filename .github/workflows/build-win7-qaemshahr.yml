@@ -47,6 +47,14 @@ jobs:
         shell: pwsh
         run: |
           Set-Location 'Vahdat-1.5.7'
+          # The bundled test-hub simulator used str.removeprefix (Python 3.9+).
+          # Only replace this helper on the Windows 7 / Python 3.8 build runner.
+          $helper = 'tools/central_demo.py'
+          $data = [IO.File]::ReadAllText((Resolve-Path $helper))
+          $old = "self.headers.get('Authorization','').removeprefix('Bearer ')"
+          $new = "self.headers.get('Authorization','')[7:]"
+          if (-not $data.Contains($old)) { throw 'Test hub Python 3.8 compatibility anchor missing' }
+          [IO.File]::WriteAllText((Resolve-Path $helper), $data.Replace($old,$new), [Text.UTF8Encoding]::new($false))
           python -m unittest discover -s windows -p 'test_*.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Base Python tests failed' }
           node windows/test_ui.cjs
