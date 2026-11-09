@@ -386,7 +386,11 @@ class Desktop:
                 token = current.get("token", "")
             secret_store.save_config(backend.DATA,branch_id,token,enabled.get())
             with backend.connect() as db:
-                backend.operations.audit(db,"BRANCH_CONFIG_UPDATED",branch_id,{"enabled":bool(enabled.get())})
+                import json
+                import time
+                db.execute("INSERT INTO audit_log(at,user_id,action,subject,payload) VALUES(?,?,?,?,?)",
+                    (int(time.time()*1000), self.user["id"], "BRANCH_CONFIG_UPDATED", branch_id,
+                     json.dumps({"enabled":bool(enabled.get())})))
                 db.commit()
             key.set("")
             messagebox.showinfo("ذخیره شد", "تنظیمات اتصال به‌صورت رمزگذاری‌شده ذخیره شد.",parent=self.root)
