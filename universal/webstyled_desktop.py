@@ -273,6 +273,14 @@ def main():
     app.setFont(QFont("Tahoma", 10))
     window = DesktopWindow(server, port, backend.app)
     window.show()
+    # Automated visual verification only: save an image of the actual embedded UI
+    # after Qt WebEngine has loaded the original app. No invented mockups.
+    preview = os.environ.get("VAHDAT_UI_PREVIEW_PATH", "")
+    if preview:
+        def capture():
+            window.grab().save(preview, "PNG")
+            QApplication.quit()
+        QTimer.singleShot(11000, capture)
     return app.exec_()
 
 
