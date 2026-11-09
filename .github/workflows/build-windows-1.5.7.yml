@@ -38,11 +38,15 @@ jobs:
         run: |
           Set-Location "Vahdat-1.5.7"
           $utf8 = [System.Text.UTF8Encoding]::new($false)
-          foreach ($path in @("windows/app.py", "windows/sync_engine.py", "windows/install.iss", "BUILD-WINDOWS.ps1")) {
+          foreach ($path in @("windows/app.py", "windows/sync_engine.py", "windows/install.iss", "BUILD-WINDOWS.ps1", "windows/browser_test.py")) {
             $data = [System.IO.File]::ReadAllText((Join-Path (Get-Location) $path))
             $data = $data.Replace("1.5.6-beta", "1.5.7-beta")
             if ($path -eq "windows/install.iss") {
               $data = $data.Replace('#define MyAppVersion "1.5.6"', '#define MyAppVersion "1.5.7"')
+            }
+            if ($path -eq "windows/browser_test.py") {
+              # The checkbox is visually hidden behind a styled label; emulate a real user clicking its label.
+              $data = $data.Replace("page.locator('#on_issue').check()", "page.locator('label.settings-print-choice:has(#on_issue)').click()")
             }
             if ($path -eq "BUILD-WINDOWS.ps1") {
               $data = $data -replace '(?m)^& \$pythonExe -m pip install --upgrade pip\r?\nif \(\$LASTEXITCODE -ne 0\) \{ throw ''pip bootstrap failed'' \}\r?\n',''
