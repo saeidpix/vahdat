@@ -149,8 +149,9 @@ def save_branch_policy():
 src=one(src,
     '    now=int(time.time()*1000)\n    try:pieces=max(1,min(number(d.get("pieces") or 1),1000000))',
     '    now=int(time.time()*1000)\n'
-    '    if number(d.get("pieces"))<1 or number(d.get("pieces"))>1000000:\n'
-    '        return error("تعداد بسته باید بین ۱ تا یک میلیون باشد.",422)\n'
+    '    raw_pieces=str(d.get("pieces","")).translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩","01234567890123456789")).strip()\n'
+    '    if not re.fullmatch(r"[0-9]+",raw_pieces) or not 1<=int(raw_pieces)<=1000000:\n'
+    '        return error("تعداد بسته باید عدد صحیح بین ۱ تا یک میلیون باشد.",422)\n'
     '    try:pieces=max(1,min(number(d.get("pieces") or 1),1000000))',
     "enforce nonzero package count server side")
 src=one(src,
