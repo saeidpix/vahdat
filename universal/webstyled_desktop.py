@@ -25,9 +25,9 @@ from PyQt5.QtWidgets import (
     QCheckBox, QDialogButtonBox, QMessageBox, QFrame, QInputDialog,
 )
 from PyQt5.QtWebEngineWidgets import (
-    QWebEngineView, QWebEnginePage, QWebEngineProfile,
-    QWebEngineUrlRequestInterceptor
+    QWebEngineView, QWebEnginePage, QWebEngineProfile
 )
+from PyQt5.QtWebEngineCore import QWebEngineUrlRequestInterceptor
 from waitress import create_server
 
 import app as backend
