@@ -48,7 +48,7 @@ class InventoryAndRecoveryTests(unittest.TestCase):
                   storage_fee,other_fee,total,created_at,received_at,delivered_at,origin_here,number)
                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                   ("VH-1760000000000-STOCK"+suffix,"تهران","قائم‌شهر","فرستنده","گیرنده",
-                   "09120000000",2,10000,30000,0,0,40000,t,received,delivered,0,int(suffix)))
+                   "09120000000",2,10000,30000,0,0,40000,t,received,delivered,0,500+int(suffix)))
         r=self.client.get("/api/inventory")
         self.assertEqual(r.status_code,200,r.get_json())
         d=r.get_json()
