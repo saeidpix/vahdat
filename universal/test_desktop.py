@@ -28,7 +28,7 @@ class UniversalTests(unittest.TestCase):
             auth = client.get("/api/auth/status").get_json()
             self.assertEqual(auth["user"]["role"], "superadmin")
             headers = {"X-CSRF-Token": auth["csrf"]}
-            r = client.post("/api/waybills", json={"destination": "تهران"}, headers=headers)
+            r = client.post("/api/waybills", json={"destination": "تهران","pieces":1,"sender":"الف","receiver":"ب"}, headers=headers)
             self.assertEqual(r.status_code, 409)
             test_token = "0123456789" * 5
             for branch_id, name in secret_store.BRANCHES.items():
@@ -39,18 +39,18 @@ class UniversalTests(unittest.TestCase):
                 self.assertNotIn(test_token.encode("ascii"),
                                  secret_store.location(core.DATA).read_bytes())
             secret_store.save_config(core.DATA, "qaemshahr", test_token)
-            r = client.post("/api/waybills", json={"destination": "تهران"}, headers=headers)
+            r = client.post("/api/waybills", json={"destination": "تهران","pieces":1,"sender":"الف","receiver":"ب"}, headers=headers)
             self.assertEqual(r.status_code, 409)
             with core.connect() as db:
                 db.execute("UPDATE sync_meta SET value='1' WHERE key='catalog_ready'")
                 db.execute("INSERT INTO sync_branch_catalog VALUES(?,?,?,?)",
                            ("tehran", "تهران", 1, 1))
                 db.commit()
-            r = client.post("/api/waybills", json={"destination":"بابل"}, headers=headers)
+            r = client.post("/api/waybills", json={"destination":"بابل","pieces":1,"sender":"الف","receiver":"ب"}, headers=headers)
             self.assertEqual(r.status_code, 409)
             r = client.post("/api/waybills", json={
                 "destination":"تهران", "sender":"آزمایشی", "receiver":"آزمایشی",
-                "prepaid":2000}, headers=headers)
+                "pieces":1, "prepaid":2000}, headers=headers)
             self.assertEqual(r.status_code, 201, r.get_json())
             self.assertEqual(r.get_json()["waybill"]["number"], 1)
             self.assertEqual(r.get_json()["waybill"]["origin"], "قائم‌شهر")
