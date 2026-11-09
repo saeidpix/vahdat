@@ -1,10 +1,10 @@
-name: Build Vahdat Desktop 1.6.1 - Inventory and Safe Sync Recovery
+name: Build Vahdat Desktop 1.6.2 - Flat Storage Fee and Required Fields
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - fix/sync-stock-pilot-1.6.1
+      - feature/branch-policy-storage-required-1.6.2
     paths:
       - '.github/workflows/universal-desktop.yml'
       - 'universal/**'
@@ -66,6 +66,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Version-specific desktop transform failed' }
           python universal/patch_sync_inventory.py
           if ($LASTEXITCODE -ne 0) { throw 'Warehouse and safe sync repair patch failed' }
+          python universal/patch_branch_policy.py
+          if ($LASTEXITCODE -ne 0) { throw 'Branch policy patch failed' }
           python -m py_compile Vahdat-1.5.7/windows/app.py Vahdat-1.5.7/windows/sync_engine.py
           if ($LASTEXITCODE -ne 0) { throw 'Patched endpoints contain Python syntax errors' }
           node --check Vahdat-1.5.7/windows/assets/operations-ui.js
@@ -78,6 +80,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Universal desktop tests failed' }
           python universal/test_inventory_recovery.py
           if ($LASTEXITCODE -ne 0) { throw 'Warehouse/conflict recovery tests failed' }
+          python universal/test_branch_policy.py
+          if ($LASTEXITCODE -ne 0) { throw 'Branch policy regression tests failed' }
           python -c "from PyQt5.QtWebEngineWidgets import QWebEngineView; from PyQt5.QtWidgets import QApplication; print('Qt WebEngine imported successfully')"
           if ($LASTEXITCODE -ne 0) { throw 'Qt WebEngine GUI libraries unavailable' }
 
@@ -152,22 +156,22 @@ jobs:
           [IO.File]::WriteAllText($iss, $data.Replace($old,$new), [Text.UTF8Encoding]::new($false))
           & $iscc 'windows/install.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Installer compile failed' }
-          $path = 'dist/installer/Vahdat-Desktop-Setup-Win7-to-Win11-v1.6.1-beta.exe'
+          $path = 'dist/installer/Vahdat-Desktop-Setup-Win7-to-Win11-v1.6.2-beta.exe'
           if (-not (Test-Path $path)) { throw 'Universal desktop Setup.exe missing' }
           Get-FileHash $path -Algorithm SHA256
 
       - name: Upload universal desktop Setup
         uses: actions/upload-artifact@v4
         with:
-          name: Vahdat-Desktop-Stock-Recovery-Setup-Win7-to-11
-          path: Vahdat-1.5.7/dist/installer/Vahdat-Desktop-Setup-Win7-to-Win11-v1.6.1-beta.exe
+          name: Vahdat-Desktop-Branch-Policy-Setup-Win7-to-11
+          path: Vahdat-1.5.7/dist/installer/Vahdat-Desktop-Setup-Win7-to-Win11-v1.6.2-beta.exe
           if-no-files-found: error
           retention-days: 45
 
       - name: Upload portable desktop EXE
         uses: actions/upload-artifact@v4
         with:
-          name: Vahdat-Desktop-Stock-Recovery-Portable-Win7-to-11
+          name: Vahdat-Desktop-Branch-Policy-Portable-Win7-to-11
           path: Vahdat-1.5.7/dist/VahdatDesktop/
           if-no-files-found: error
           retention-days: 45
