@@ -1,0 +1,163 @@
+name: Build Vahdat Styled Desktop - Original Web UI for Windows 7 to 11
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build/universal-webstyle-desktop
+    paths:
+      - '.github/workflows/universal-desktop.yml'
+      - 'universal/**'
+      - '.github/workflows/webstyled-desktop.yml'
+      - 'build-source/Vahdat-v1.5.7.zip'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-desktop:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - name: Checkout source and desktop overlay
+        uses: actions/checkout@v4
+
+      - name: Unpack full verified Vahdat 1.5.7
+        shell: pwsh
+        run: |
+          Expand-Archive -LiteralPath 'build-source/Vahdat-v1.5.7.zip' -DestinationPath '.' -Force
+          if (-not (Test-Path 'Vahdat-1.5.7/windows/app.py')) { throw 'Full source archive not found' }
+
+      - name: Python 3.8 x86 runtime for Windows 7
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8.10'
+          architecture: x86
+
+      - name: Pin Windows 7 compatible libraries
+        shell: pwsh
+        run: |
+          python -c "import platform,sys; assert sys.version_info[:2] == (3,8); assert platform.architecture()[0] == '32bit'; print(sys.version)"
+          python -m pip install --no-input --only-binary=:all: 'flask==2.3.3' 'werkzeug==2.3.8' 'waitress==2.1.2' 'qrcode[pil]==7.4.2' 'pillow==10.4.0' 'pyinstaller==5.13.2' 'PyQt5==5.15.9' 'PyQtWebEngine==5.15.6'
+          if ($LASTEXITCODE -ne 0) { throw 'Dependencies could not be installed' }
+          python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency conflicts' }
+
+      - name: Original offline sync regression tests
+        shell: pwsh
+        run: |
+          Set-Location 'Vahdat-1.5.7'
+          $helper = Resolve-Path 'tools/central_demo.py'
+          $text = [IO.File]::ReadAllText($helper)
+          $old = "self.headers.get('Authorization','').removeprefix('Bearer ')"
+          if (-not $text.Contains($old)) { throw 'Legacy test hub compatibility anchor missing' }
+          [IO.File]::WriteAllText($helper, $text.Replace($old,"self.headers.get('Authorization','')[7:]"), [Text.UTF8Encoding]::new($false))
+          python -m unittest discover -s windows -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Original Python regression tests failed' }
+          node windows/test_ui.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Original JavaScript UI tests failed' }
+          node windows/test_settings_156.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Settings JS tests failed' }
+
+      - name: Prepare independent five-branch desktop edition
+        shell: pwsh
+        run: |
+          python universal/prepare.py
+          if ($LASTEXITCODE -ne 0) { throw 'Version-specific desktop transform failed' }
+          python -m py_compile 'Vahdat-1.5.7/windows/app.py' 'Vahdat-1.5.7/windows/operations.py' 'Vahdat-1.5.7/windows/sync_engine.py' 'universal/desktop.py' 'universal/secret_store.py'
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop Python syntax failed' }
+          python universal/test_desktop.py
+          if ($LASTEXITCODE -ne 0) { throw 'Universal desktop tests failed' }
+          python -c "from PyQt5.QtWebEngineWidgets import QWebEngineView; from PyQt5.QtWidgets import QApplication; print('Qt WebEngine imported successfully')"
+          if ($LASTEXITCODE -ne 0) { throw 'Qt WebEngine GUI libraries unavailable' }
+
+      - name: Bundle original HTML/CSS UI into the native Qt WebEngine desktop
+        shell: pwsh
+        run: |
+          Set-Location 'Vahdat-1.5.7'
+          Copy-Item 'app/src/main/res/drawable/brand_logo.png' 'windows/assets/logo.png' -Force
+          python -c "from PIL import Image; Image.open('windows/assets/logo.png').convert('RGBA').save('windows/assets/logo.ico',format='ICO',sizes=[(16,16),(32,32),(48,48),(64,64),(128,128)])"
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop icon failed' }
+          python -m PyInstaller --noconfirm --clean --onedir --windowed --name VahdatDesktop --icon 'windows/assets/logo.ico' --paths windows --paths ../universal --add-data 'windows/ui.html;.' --add-data 'windows/financial-report-print.html;.' --add-data 'windows/assets/logo.png;.' --add-data 'windows/assets;assets' '../universal/webstyled_desktop.py'
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop PyInstaller build failed' }
+          $file = Resolve-Path 'dist/VahdatDesktop/VahdatDesktop.exe'
+          $bytes = [IO.File]::ReadAllBytes($file)
+          $offset = [BitConverter]::ToInt32($bytes, 0x3c)
+          if ([BitConverter]::ToUInt16($bytes, $offset + 4) -ne 0x14c) { throw 'EXE is not x86' }
+          Get-FileHash $file -Algorithm SHA256
+
+      - name: Visual smoke test of the original UI in the real desktop window
+        shell: pwsh
+        run: |
+          Set-Location 'Vahdat-1.5.7'
+          $env:PROGRAMDATA = Join-Path $env:RUNNER_TEMP 'vahdat-webstyle-test'
+          New-Item -ItemType Directory -Force $env:PROGRAMDATA | Out-Null
+          New-Item -ItemType Directory -Force 'dist/visual-test' | Out-Null
+          $env:VAHDAT_UI_PREVIEW_PATH = (Join-Path (Get-Location) 'dist/visual-test/actual-desktop.png')
+          $proc = Start-Process -FilePath (Resolve-Path 'dist/VahdatDesktop/VahdatDesktop.exe') -PassThru
+          try {
+            $proc.WaitForExit(30000) | Out-Null
+            $picture = 'dist/visual-test/actual-desktop.png'
+            if (-not (Test-Path $picture)) { throw 'Qt window failed to render a screenshot' }
+            python -c "from PIL import Image; im=Image.open('dist/visual-test/actual-desktop.png').convert('RGB'); assert im.size[0]>=900 and im.size[1]>=600, im.size; cols=im.resize((180,110)).getcolors(19800); assert len(cols) > 90, len(cols); print('Actual desktop screenshot:',im.size,'unique colors:',len(cols))"
+            if ($LASTEXITCODE -ne 0) { throw 'Desktop screenshot looks empty or broken' }
+            $data = Join-Path $env:PROGRAMDATA 'VahdatUniversal/vahdat.sqlite3'
+            if (-not (Test-Path $data)) { throw 'Desktop did not create its isolated SQLite database' }
+            # Qt serves its assets on ephemeral loopback port; no externally reachable port.
+            $net = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalAddress -notin @('127.0.0.1','::1') -and $_.OwningProcess -eq $proc.Id }
+            if ($net) { throw 'Desktop opened an externally reachable HTTP port' }
+          } finally {
+            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -ErrorAction SilentlyContinue }
+          }
+
+      - name: Upload actual desktop UI screenshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Vahdat-Webstyle-Desktop-Visual-Check
+          path: Vahdat-1.5.7/dist/visual-test/actual-desktop.png
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Get Inno Setup compiler
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Inno Setup 6/ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+          }
+          if (-not (Test-Path $iscc)) { throw 'Inno Setup compiler missing' }
+
+      - name: Compile one installer for all branches
+        shell: pwsh
+        run: |
+          Set-Location 'Vahdat-1.5.7'
+          $iscc = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Inno Setup 6/ISCC.exe'
+          $iss = Resolve-Path 'windows/install.iss'
+          $data = [IO.File]::ReadAllText($iss)
+          $old = 'Source: "..\dist\VahdatDesktop.exe"; DestDir: "{app}"; Flags: ignoreversion'
+          $new = 'Source: "..\dist\VahdatDesktop\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs'
+          if (-not $data.Contains($old)) { throw 'Cannot configure Qt WebEngine onedir packaging' }
+          [IO.File]::WriteAllText($iss, $data.Replace($old,$new), [Text.UTF8Encoding]::new($false))
+          & $iscc 'windows/install.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compile failed' }
+          $path = 'dist/installer/Vahdat-Desktop-Setup-Win7-to-Win11-v1.6.0-beta.exe'
+          if (-not (Test-Path $path)) { throw 'Universal desktop Setup.exe missing' }
+          Get-FileHash $path -Algorithm SHA256
+
+      - name: Upload universal desktop Setup
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vahdat-Desktop-Universal-Setup-Win7-to-11
+          path: Vahdat-1.5.7/dist/installer/Vahdat-Desktop-Setup-Win7-to-Win11-v1.6.0-beta.exe
+          if-no-files-found: error
+          retention-days: 45
+
+      - name: Upload portable desktop EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vahdat-Desktop-Universal-Portable-Win7-to-11
+          path: Vahdat-1.5.7/dist/VahdatDesktop/
+          if-no-files-found: error
+          retention-days: 45
