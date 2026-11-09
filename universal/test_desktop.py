@@ -17,7 +17,7 @@ class UniversalTests(unittest.TestCase):
             import app as core
             import secret_store
             core.DATA = pathlib.Path(tmp) / "VahdatUniversal"
-            core.DATA.mkdir()
+            core.DATA.mkdir(exist_ok=True)
             core.DB = core.DATA / "vahdat.sqlite3"
             core.sync_engine.load_config = secret_store.load_config
             core.init()
