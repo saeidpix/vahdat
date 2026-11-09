@@ -70,6 +70,9 @@ sync = one(sync, "version='1.5.6-beta'",
 SYNC.write_text(sync, encoding="utf-8")
 
 inno = INNO.read_text(encoding="utf-8")
+if inno.count('VahdatServer.exe') != 3:
+    raise RuntimeError("Original installer EXE name count changed")
+inno = inno.replace('VahdatServer.exe', 'VahdatQaemshahrPilot.exe')
 inno = one(inno, '#define MyAppName "اتوبنز وحدت"',
            '#define MyAppName "اتوبنز وحدت - تست قائم شهر"', "pilot app title")
 inno = one(inno, '#define MyAppVersion "1.5.6"',
