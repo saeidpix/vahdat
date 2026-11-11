@@ -2,7 +2,7 @@
 
 <html dir="rtl" lang="fa">
 <head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>اتوبنز وحدت | نسخه ۱٫۱</title>
+<title>اتوبنز وحدت | نسخه ۱</title>
 <script>window.v24Origin=function(){try{var c=JSON.parse(localStorage.getItem('autobenz-company-v1'));return (c&&c.origin)||'تهران'}catch(e){return 'تهران'}};window.v24Company=function(){try{return JSON.parse(localStorage.getItem('autobenz-company-v1'))||{}}catch(e){return {}}}</script>
 <style>
 :root{--navy:#12345b;--navy2:#1b456e;--accent:#1769b6;--canvas:#f2f5fa;--ink:#21344d;--muted:#6f8198;--line:#e1e8f1;--white:#fff}
@@ -1171,18 +1171,17 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
 </section>
 
 <section id="v16DestinationView" class="v16-destination" hidden dir="rtl" aria-label="دریافت آزمایشی در مقصد">
-  <div class="v16-dest-top"><div><small>اتوبنز وحدت / ماژول مقصد</small><h2>دریافت بارنامه از QR</h2><p>کد اسکن‌شده را اینجا وارد کن. در نسخه نمایشی این اطلاعات در همین مرورگر ثبت می‌شود.</p></div><button type="button" class="v16-outline" id="v16BackWaybill">بازگشت به صدور</button></div>
+  <div class="v16-dest-top"><div><small>اتوبنز وحدت / ماژول مقصد</small><h2>دریافت بارنامه از QR</h2><p>کد QR بارنامه را اسکن کنید؛ دریافت به‌صورت خودکار ثبت می‌شود.</p></div><button type="button" class="v16-outline" id="v16BackWaybill">بازگشت به صدور</button></div>
   <div class="v16-dest-cols"><div class="v16-dest-card"><h3>۱. خواندن بارکد دوبعدی</h3><p>اسکنر دوبعدی متصل به کامپیوتر مانند صفحه‌کلید عمل می‌کند. با هر اسکن، بارنامه خودکار ثبت می‌شود و کادر پاک می‌شود.</p>
     <label for="v16ScanInput">متن خوانده‌شده از QR</label><textarea id="v16ScanInput" rows="4" spellcheck="false" dir="ltr" placeholder="ABV16.Z. ..."></textarea>
     <div class="v16-row-buttons"><button type="button" class="v16-primary" id="v16Decode">ثبت دریافت</button><button class="v16-outline" type="button" id="v16ClearScan">پاک‌کردن</button></div>
     <div class="v16-scanner-notice" id="v16ScanStatus" role="status">آماده اسکن؛ پس از اسکن، دریافت خودکار ثبت می‌شود.</div>
-    <p class="v16-security">این پیش‌نمایش برای آزمایش گردش کار است. QR فاقد امضای معتبر سرور است؛ صحت مالی و هویت در نسخه نهایی باید از پایگاه داده و اعتبارسنجی امن تأیید شود.</p>
+    
   </div><div class="v16-dest-card"><h3>۲. اطلاعات شناسایی‌شده</h3><div id="v16Decoded" class="v16-empty">هنوز QR معتبری خوانده نشده است.</div>
     <button type="button" class="v16-primary" id="v16SaveReceived" disabled style="display:none">ثبت دریافت آزمایشی در مقصد</button>
     <p id="v16ReceiveResult" role="status" class="v16-received-status"></p>
   </div></div>
-  <div class="v16-dest-card v16-recent"><h3>ثبت‌های آزمایشی مقصد در این مرورگر</h3><div id="v16ReceivedList" class="v16-received-list">هنوز دریافت آزمایشی ثبت نشده است.</div></div>
-</section>
+  </section>
 
 </main></div></div>
 <div aria-labelledby="modalTitle" aria-modal="true" class="backdrop" id="modal" role="dialog"><div class="dialog"><div class="dialog-head"><h3 id="modalTitle">جزئیات</h3><button aria-label="بستن" class="icon-btn" id="modalClose"><svg aria-hidden="true" class="icon" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" viewbox="0 0 24 24" width="18"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></div><div class="dialog-body"><div class="bigicon"><svg aria-hidden="true" class="icon" fill="none" height="30" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" viewbox="0 0 24 24" width="30"><path d="M4 4h16l2 13H2L4 4Z"></path><path d="M2 17h6l2 3h4l2-3h6"></path></svg></div><p id="modalText">در حال حاضر اطلاعاتی برای نمایش وجود ندارد.</p></div><div class="dialog-foot"><button class="primary-btn" id="okBtn">متوجه شدم</button></div></div></div>
@@ -1213,7 +1212,7 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
           <button role="tab" data-sm-tab="dashboard" type="button"><span class="sm-ico"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTIzQjY4IiBzdHJva2Utd2lkdGg9IjMuMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTEgNTNoNDQiLz48cmVjdCB4PSIxNSIgeT0iMzYiIHdpZHRoPSI5IiBoZWlnaHQ9IjE3IiByeD0iMiIvPjxyZWN0IHg9IjI4IiB5PSIyNyIgd2lkdGg9IjkiIGhlaWdodD0iMjYiIHJ4PSIyIi8+PHJlY3QgeD0iNDEiIHk9IjE3IiB3aWR0aD0iOSIgaGVpZ2h0PSIzNiIgcng9IjIiLz48L2c+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZCMjFGIiBzdHJva2Utd2lkdGg9IjMuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTUgMjAgMjUgMTVsMTAgNSAxMy0xMCIvPjwvZz48L3N2Zz4=" alt="" class="v12-settings-icon" aria-hidden="true"></span><span>داشبورد<small>بازه به‌روزرسانی</small></span></button>
           <div class="sm-nav-divider"></div><div class="sm-nav-caption">زیرساخت و آینده</div>
           <button role="tab" data-sm-tab="users" type="button"><span class="sm-ico" style="font-size:18px">☻</span><span>کاربران و دسترسی<small>ورود، رمز، قابلیت‌های هر کاربر</small></span></button>
-          <button role="tab" data-sm-tab="system" type="button"><span class="sm-ico"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTIzQjY4IiBzdHJva2Utd2lkdGg9IjMuMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMzIgOXY3TTMyIDQ4djdNOSAzMmg3TTQ4IDMyaDdNMTYgMTZsNSA1TTQzIDQzbDUgNU00OCAxNmwtNSA1TTIxIDQzbC01IDUiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIxNyIvPjwvZz48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNGRkIyMUYiIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxjaXJjbGUgY3g9IjMyIiBjeT0iMzIiIHI9IjciLz48L2c+PC9zdmc+" alt="" class="v12-settings-icon" aria-hidden="true"></span><span>سیستم و دسترسی<small>اتصال، کاربران، پشتیبان</small></span></button>
+          
         </div>
         <div class="sm-side-foot"><span class="sm-status-circle"></span> پیش‌نمایش V10 <small>قابل توسعه برای تنظیمات آینده</small></div>
       </aside>
@@ -1366,11 +1365,7 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
           </div>
           <div class="sm-callout">رمزها به‌صورت هش‌شده ذخیره می‌شوند و بعد از پنج تلاش ناموفق، ورود ۳۰ ثانیه قفل می‌شود. اما در این نسخه (فایل HTML با ذخیره در مرورگر) هر کسی که به مرورگر دسترسی داشته باشد می‌تواند داده‌ها را ببیند؛ امنیت واقعی در نسخه ویندوز و SQL Server انجام می‌شود. تغییرات این بخش بلافاصله ذخیره می‌شود (بدون نیاز به «ذخیره تغییرات»).</div>
         </section>
-        <section class="sm-page" data-sm-page="system" hidden>
-          <div class="sm-future-head">بخش زیرساخت برنامه نهایی <span>در دست طراحی</span></div>
-          <div class="sm-future-grid"><div class="sm-future-card"><strong>بانک اطلاعاتی و شبکه</strong><p>انتخاب میزبان دفتر، سرور شبکه یا NAS سازگار؛ محل اتصال و آزمون ارتباط</p><span>در نسخه ویندوزی</span></div><div class="sm-future-card"><strong>کاربران و سطح دسترسی</strong><p>تعریف نقش‌ها، دسترسی مدیر و کارمند، و کنترل عملیات حساس</p><span>در نسخه ویندوزی</span></div><div class="sm-future-card"><strong>پشتیبان‌گیری</strong><p>برنامه زمان‌بندی، مقصد نسخه پشتیبان، گزارش آخرین اجرا و بازیابی</p><span>در نسخه ویندوزی</span></div><div class="sm-future-card"><strong>بارکد دوبعدی</strong><p>نوع و محتوای کد، قالب چاپ و قواعد شناسایی مرسوله</p><span>در نسخه ویندوزی</span></div></div>
-          <div class="sm-callout">این موارد در پیش‌نمایش HTML عملیاتی نیستند. پنجره تنظیمات از حالا برای افزودن تب‌های مستقل و کنترل‌های مدیریتی بیشتر آماده شده است.</div>
-        </section>
+        
         <div class="sm-no-results" id="smNoResults" hidden><strong>تنظیمی پیدا نشد</strong><p>عبارت دیگری بنویس؛ مانند «مسیر»، «عنوان»، «انبارداری» یا «فونت».</p><button type="button" id="smClearSearch">پاک‌کردن جستجو</button></div>
       </main>
     </div>
@@ -2858,10 +2853,11 @@ $('#waybillForm').addEventListener('submit',e=>{e.preventDefault();
    if(!existing)return invalid('بارنامه برای ویرایش پیدا نشد؛ صفحه را بازخوانی کنید.');
    if(isLockedWaybill(existing))return invalid('این بارنامه تحویل شده یا در مرحله بعدی است؛ ویرایش بدون فرآیند اصلاح رسمی مجاز نیست.');
  }
- const data=gather();if(!validate(data))return;let rec;
- if(editingId){const index=updated.findIndex(r=>r.id===editingId);rec={...updated[index],...data};updated[index]=rec}
+ if(editingId&&window.v23Can&&!window.v23Can('editBill'))return invalid('شما مجوز ویرایش بارنامه ندارید.');
+ const data=gather();if(!validate(data))return;let rec,__old=null;
+ if(editingId){const index=updated.findIndex(r=>r.id===editingId);__old=updated[index];rec={...updated[index],...data};updated[index]=rec}
  else{rec={...data,id:nextLocalId(),createdAt:new Date().toISOString(),status:'صادرشده',driver:''};updated.unshift(rec)}
- if(!safeWrite(recKey,updated))return invalid('ثبت محلی ممکن نشد. دسترسی ذخیره‌سازی مرورگر را بررسی کنید.');records=updated;
+ if(!safeWrite(recKey,updated))return invalid('ثبت محلی ممکن نشد. دسترسی ذخیره‌سازی مرورگر را بررسی کنید.');records=updated;if(__old&&window.v25AuditEdit)window.v25AuditEdit(__old,rec);
  safeWrite(waybillSeqKey,Math.max(serialNumber(safeRead(waybillSeqKey,0)),serialNumber(rec.id)));
  lastSavedId=rec.id;try{localStorage.removeItem(draftKey)}catch(_){}blankForm();$('#formMessage').textContent='بارنامه شماره '+digits(rec.id)+' ثبت شد. این شماره فقط متعلق به پیش‌نمایش این مرورگر است و شماره سراسری یا رسمی نیست.';$('#formMessage').className='wb-form-message success';$('#senderName').focus();renderDashboard();toast('پیش‌نمایش بارنامه در همین مرورگر ذخیره شد.');if(prefs.print==='preview')printWaybill(rec);else if(prefs.print==='ask'&&confirm('پیش‌نمایش چاپ نمایش داده شود؟'))printWaybill(rec)});
 $('#saveDraft').onclick=()=>{const d=gather();if(safeWrite(draftKey,d)){toast('پیش‌نویس در همین مرورگر ذخیره شد.');$('#formMessage').textContent='پیش‌نویس محلی ذخیره شد؛ هنوز به فهرست بارنامه‌ها اضافه نشده است.';$('#formMessage').className='wb-form-message success'}};
@@ -2997,6 +2993,7 @@ function renderDashboard(){const sets=[records.filter(isToday).length,records.fi
  const footer=$('.table-footer');footer.querySelector(':scope > span').textContent=`نمایش ${fmtNum(visible.length)} از ${fmtNum(list.length)} بارنامه`;footer.querySelector('.page-indicator').textContent=fmtNum(page);footer.querySelector('.pages>span:last-child').textContent='از '+fmtNum(pageCount);const btns=$$('.page-btn');btns[0].disabled=page===1;btns[1].disabled=page===pageCount;}
 function isLockedWaybill(r){return !!(r&&(r.handedAt||r.receivedAt||(r.status&&r.status!=='صادرشده')))}
 function viewRecord(id){
+ if(window.v25ViewRecord)return window.v25ViewRecord(id);
  const r=records.find(x=>x.id===id);if(!r)return;
  const locked=isLockedWaybill(r);
  const msg=`شماره بارنامه: ${digits(r.id)} | فرستنده: ${r.senderName} | گیرنده: ${r.recipientName} | مقصد: ${r.destination} | تعداد بسته: ${fmtNum(r.totalPackages)} | جمع کل: ${fmtNum(r.total)} تومان.`+(locked?' این بارنامه تحویل شده یا از مرحله صدور خارج شده است؛ ویرایش اطلاعات اصلی در این پیش‌نمایش مجاز نیست.':' برای ویرایش، از فرم صدور استفاده کنید.');
@@ -3078,8 +3075,7 @@ renderDestinations();renderPackageTitles();blankForm();applySettings();renderDas
     {id:'print',title:'چاپ بارنامه',description:'تنظیم قالب A4 سه‌نسخه‌ای، فونت، خطوط برش و رفتار چاپ.',search:'چاپ پرینت A4 سه نسخه بار مشتری مقصد فونت تیتر B Titr خط برش مهر امضا حاشیه لوگو'},
     {id:'display',title:'ظاهر و فونت',description:'تنظیم فونت برنامه و نحوه نمایش اعداد.',search:'فونت فارسی سری b میترا نازنین یکان تیتـر نمایش اعداد انگلیسی'},
     {id:'dashboard',title:'داشبورد',description:'مدیریت زمان‌بندی بازخوانی اطلاعات محلی.',search:'داشبورد گزارش به روز رسانی بروزرسانی تازه سازی رفرش'},
-    {id:'users',title:'کاربران و دسترسی',description:'تعریف کاربر با نام کاربری و رمز عبور و انتخاب قابلیت‌های مجاز برای هر کاربر.',search:'کاربر کاربران رمز پسورد نام کاربری دسترسی مجوز ورود مدیر'},
-    {id:'system',title:'سیستم و دسترسی',description:'جایگاه آماده برای تنظیمات شبکه، کاربران و پشتیبان‌گیری در نسخه نهایی.',search:'دسترسی سرور بانک اطلاعات شبکه sql user نقش backup بکاپ پشتیبان بارکد دوبعدی 2d QR'}
+    {id:'users',title:'کاربران و دسترسی',description:'تعریف کاربر با نام کاربری و رمز عبور و انتخاب قابلیت‌های مجاز برای هر کاربر.',search:'کاربر کاربران رمز پسورد نام کاربری دسترسی مجوز ورود مدیر'}
   ];
   const labels=['fontChoice','customFontName','digitChoice','refreshChoice','printChoice','storageRateSetting','showPackageQuantity','showPackageWeight','v18PrintFont','v18PrintFontSize','v18PrintMargin','v18PrintLogo','v18PrintCut','v18PrintSignature','v21ReadySortSetting','v23PackageMode','v23ShowHistory','v23CompanyPercent','v23KeeperStoragePercent'];
   let draft=null, snapshot='', activeTab='overview', restoreFocus=null, editingRoute=null, editingTitle=null, editingCustomerCode=null;
@@ -3584,7 +3580,7 @@ function receiptMatchesRecord(r,p){
 window.abvReceiptMatchesRecord=receiptMatchesRecord;
 const key='autobenz-v16-received-local';
 function readSaved(){try{const x=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(x)?x:[]}catch(_){return []}}
-function listSaved(){const list=readSaved();$('v16ReceivedList').innerHTML=list.length?list.slice(0,15).map(x=>`<span>بارنامه ${safe(x.id)} · ${safe(x.d)} · ${safe(new Date(x.receivedAt).toLocaleString('fa-IR'))}</span>`).join(''):'هنوز دریافت آزمایشی ثبت نشده است.'}
+function listSaved(){}
 function showDest(){document.body.classList.add('v16-destination-mode');$('v16DestinationView').hidden=false;listSaved();window.scrollTo(0,0);$('v16ScanInput').focus()}
 function closeDest(){document.body.classList.remove('v16-destination-mode');$('v16DestinationView').hidden=true}
 if(typeof navigate==='function'){
@@ -3613,6 +3609,7 @@ function v23Save(){
  const stored=normalizeWaybillRecords(safeRead(recKey,[])),source=stored.find(x=>String(x.id)===String(scanned.id));
  // A colliding numeric id from another branch must not silently overwrite local waybill data.
  if(source&&!receiptMatchesRecord(source,scanned)){$('v16ReceiveResult').textContent='شماره بارنامه با یک سند محلی متفاوت تداخل دارد؛ دریافت ثبت نشد. اطلاعات و مقصد را بررسی کنید.';return}
+ if(source&&source.status==='باطل‌شده'){$('v16ReceiveResult').textContent='این بارنامه باطل شده است؛ دریافت ثبت نمی‌شود.';return}
  if(source&&(source.status!=='در مسیر'||!source.handedAt)){$('v16ReceiveResult').textContent='این بارنامه در همین دفتر هنوز به راننده تحویل نشده است؛ امکان ثبت دریافت وجود ندارد.';return}
  const entry={...scanned,receivedAt:new Date().toISOString()};const previous=list.slice();list.unshift(entry);
  try{
@@ -3720,7 +3717,7 @@ window.v16DecodeQr=fromQR;
  }
  async function addByText(){
    const raw=clean(q('v19WaybillCode').value);if(!raw)return message('شماره بارنامه یا متن QR را وارد کنید.',true);
-   if(!selectedDestination())return message('قبل از اسکن یا ورود شماره، مقصد را انتخاب کنید.',true);
+   if(!selectedDestination()){q('v19WaybillCode').value='';window.v23Alert('مقصد انتخاب نشده','قبل از اسکن یا ورود شماره‌ی بارنامه، ابتدا مقصد را انتخاب کنید و سپس دوباره اسکن کنید.',()=>{const d=document.querySelector('#v25DestBtnsHandoff .v25-dest')||q('v20MainDestination');if(d)d.focus()},'error');return}
    if(raw.startsWith('ABV16.')){
      q('v19WaybillCode').value='';
      try{
@@ -3835,13 +3832,15 @@ window.v16DecodeQr=fromQR;
    if([...names].some(([id])=>id===saved))q('v21ReportDriver').value=saved;
  }
  function render(){
-   const all=getRecords().filter(isInTransit);syncDriverFilter(all);
+   const base=normalizeWaybillRecords(safeRead(recKey,[])),rcv=safeRead('autobenz-v16-received-local',[]),verified=Array.isArray(rcv)?rcv:[];
+   syncDriverFilter(base.filter(r=>r.driver||r.driverId));
    const filter=q('v21ReportDriver').value;
-   const rows=all.filter(r=>!filter||driverKey(r)===filter).sort((a,b)=>Date.parse(b.handedAt||0)-Date.parse(a.handedAt||0));
+   const stat=r=>r.status==='دریافت‌شده در مقصد'?'منتظر ترخیص':(r.status||'صادرشده');
+   const rows=base.filter(r=>(!filter||driverKey(r)===filter)&&(!window.v25ReportPass||window.v25ReportPass(r))&&!(r.status==='در مسیر'&&verified.some(x=>window.abvReceiptMatchesRecord?.(r,x)))).sort((a,b)=>Date.parse(b.handedAt||b.createdAt||0)-Date.parse(a.handedAt||a.createdAt||0));
    q('v21ReportCount').textContent=fmt(rows.length);
-   q('v21ReportDriversCount').textContent=fmt(new Set(rows.map(driverKey)).size);
+   q('v21ReportDriversCount').textContent=fmt(new Set(rows.filter(r=>r.driver||r.driverId).map(driverKey)).size);
    q('v21ReportTimestamp').textContent='آخرین بررسی: '+new Date().toLocaleString('fa-IR');
-   q('v21ReportTableBody').innerHTML=rows.length?rows.map(r=>`<tr><td><strong>${esc(digits(r.id))}</strong></td><td>${esc(r.driver||'—')}</td><td>${esc(r.recipientName||'—')}</td><td>${esc(r.destination||'—')}</td><td>${esc(r.handedAt?new Date(r.handedAt).toLocaleString('fa-IR'):'—')}</td><td>در مسیر</td></tr>`).join(''):'<tr><td colspan="6" class="v19-empty">در حال حاضر بارنامه‌ای در دست راننده انتخاب‌شده نیست.</td></tr>';
+   q('v21ReportTableBody').innerHTML=rows.length?rows.map(r=>`<tr><td><strong>${esc(digits(r.id))}</strong></td><td>${esc(r.driver||'—')}</td><td>${esc(r.recipientName||'—')}</td><td>${esc(r.destination||'—')}</td><td>${esc(r.handedAt?new Date(r.handedAt).toLocaleString('fa-IR'):'—')}</td><td>${esc(stat(r))}</td></tr>`).join(''):'<tr><td colspan="6" class="v19-empty">بارنامه‌ای با این فیلترها پیدا نشد.</td></tr>';
  }
  function show(){
    if(document.body.classList.contains('settings-page-mode')&&typeof closeSettings==='function'&&!closeSettings())return;
@@ -3938,7 +3937,7 @@ window.v16DecodeQr=fromQR;
 (function(){
  const $=id=>document.getElementById(id);
  const usersKey='autobenz-preview-users-v23',sessKey='autobenz-session-v23';
- const PERMS=[['issue','صدور بارنامه'],['history','گزارش بارنامه‌های قبلی و چاپ مجدد'],['handoff','تحویل به راننده'],['receive','دریافت در مقصد'],['release','ترخیص بار'],['dashboard','جستجو و پیگیری (داشبورد)'],['driverReport','گزارش بارهای دست راننده'],['finance','گزارش مالی'],['settings','تنظیمات (بدون مدیریت کاربران)']];
+ const PERMS=[['issue','صدور بارنامه'],['history','گزارش بارنامه‌های قبلی و چاپ مجدد'],['handoff','تحویل به راننده'],['receive','دریافت در مقصد'],['release','ترخیص بار'],['dashboard','جستجو و پیگیری (داشبورد)'],['driverReport','گزارش بارهای دست راننده'],['finance','گزارش مالی'],['settings','تنظیمات (بدون مدیریت کاربران)'],['editBill','ویرایش بارنامه (صادرشده)'],['cancelBill','ابطال بارنامه'],['audit','گزارش ویرایش‌ها و ابطال‌ها']];
  const SECTION_PERM={'صدور بارنامه':'issue','تحویل به راننده':'handoff','دریافت در مقصد':'receive','ترخیص بار':'release','جستجو و پیگیری':'dashboard','گزارش‌ها':'driverReport','گزارش مالی':'finance','تنظیمات':'settings'};
 
  /* ---------- SHA-256 (pure JS, no secure-context requirement) ---------- */
@@ -3974,12 +3973,12 @@ window.v16DecodeQr=fromQR;
  const currentUser=()=>{const id=sessionId();return id?readUsers().find(u=>u.id===id&&u.active!==false)||null:null};
  function can(perm){if(!authRequired())return true;const u=currentUser();if(!u)return false;return !!u.admin||!!(u.perms&&u.perms[perm])}
  const isAdmin=()=>!authRequired()||!!currentUser()?.admin;
- window.v23Can=can;window.v23IsAdmin=()=>isAdmin();
+ window.v23Can=can;window.v23UserName=()=>{const u=currentUser();return u?u.username:''};window.v23IsAdmin=()=>isAdmin();
 
  function ensureLogin(){
   let ov=$('v23Login');if(ov)return ov;
   ov=document.createElement('div');ov.id='v23Login';ov.hidden=true;ov.dir='rtl';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');
-  ov.innerHTML='<form class="v23-login-card" id="v23LoginForm" autocomplete="off"><h2>ورود به اتوبنز وحدت</h2><small style="color:#6385a0">نسخه ۱٫۱٫۰</small><p>نام کاربری و رمز عبور را وارد کنید.</p><label for="v23LoginUser">نام کاربری</label><input id="v23LoginUser" autocomplete="off" spellcheck="false"/><label for="v23LoginPass">رمز عبور</label><input id="v23LoginPass" type="password" autocomplete="off"/><button type="submit" id="v23LoginBtn">ورود</button><div id="v23LoginMsg" role="alert"></div></form>';
+  ov.innerHTML='<form class="v23-login-card" id="v23LoginForm" autocomplete="off"><h2>ورود به اتوبنز وحدت</h2><small style="color:#6385a0">نسخه ۱٫۰٫۰</small><p>نام کاربری و رمز عبور را وارد کنید.</p><label for="v23LoginUser">نام کاربری</label><input id="v23LoginUser" autocomplete="off" spellcheck="false"/><label for="v23LoginPass">رمز عبور</label><input id="v23LoginPass" type="password" autocomplete="off"/><button type="submit" id="v23LoginBtn">ورود</button><div id="v23LoginMsg" role="alert"></div></form>';
   document.body.appendChild(ov);
   $('v23LoginForm').addEventListener('submit',e=>{e.preventDefault();tryLogin()});
   $('v23LoginUser').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('v23LoginPass').focus()}});
@@ -4155,6 +4154,7 @@ window.v16DecodeQr=fromQR;
  function inPeriod(ts,mode){
   const t=Date.parse(ts);if(!t)return false;if(mode==='all')return true;
   const d=new Date(t),n=new Date(),a=jparts(d),b=jparts(n);
+  if(mode==='day'||mode==='range')return window.v25InCustom?window.v25InCustom(ts,mode):false;
   if(mode==='today')return a.y===b.y&&a.m===b.m&&a.d===b.d;
   if(mode==='month')return a.y===b.y&&a.m===b.m;
   return n.getTime()-t<7*86400000; // week
@@ -4186,7 +4186,7 @@ window.v16DecodeQr=fromQR;
  }
  const PRINT_CSS='@page{size:A4;margin:0}*{box-sizing:border-box}html,body{margin:0}body{direction:rtl;color:#111;font-size:11px;line-height:1.65;padding:12mm}h1{font-size:16px;margin:0 0 3px;padding-bottom:5px;border-bottom:2px solid #222}p.meta{margin:0 0 8px;color:#444;font-size:10.5px}.sum{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;margin-bottom:8px}.v23-fin-box{border:1px solid #999;border-radius:4px;padding:1px 10px 5px;break-inside:avoid}h3{margin:4px 0 2px;font-size:12px}.v23-fin-line{display:flex;justify-content:space-between;gap:10px;padding:1.5px 0;border-bottom:1px dashed #bbb}.v23-fin-line:last-child{border-bottom:0}.v23-fin-line.is-sub{color:#555}.v23-fin-total{grid-column:1/-1;display:flex;justify-content:space-between;border:1.5px solid #222;border-radius:4px;padding:4px 10px;font-weight:bold;font-size:13px;background:#f3f3f3}table{width:100%;border-collapse:collapse;font-size:10.5px}th,td{border:1px solid #999;padding:2px 5px;text-align:right}th{background:#e9eef4;font-weight:bold}tbody tr:nth-child(even){background:#f7f8fa}thead{display:table-header-group}tr{break-inside:avoid}';
  function printFinance(){
-  const per=$('v23FinPeriod').selectedOptions[0].textContent,font=(getComputedStyle(document.body).fontFamily||'Tahoma').replace(/"/g,"'");
+  const per=window.v25FinLabel?window.v25FinLabel():$('v23FinPeriod').selectedOptions[0].textContent,font=(getComputedStyle(document.body).fontFamily||'Tahoma').replace(/"/g,"'");
   const head='<tr><th>بارنامه</th><th>تاریخ ترخیص</th><th>پس‌کرایه</th><th>سهم شرکت</th><th>سهم راننده</th><th>انبارداری</th><th>سهم انباردار از انبارداری</th></tr>';
   const html='<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش مالی ترخیص‌ها</title><style>body{font-family:'+font+'}'+PRINT_CSS+'</style></head><body><h1>گزارش مالی ترخیص‌ها — اتوبنز وحدت</h1><p class="meta">بازه: '+esc(per)+' | '+esc($('v23FinCount').textContent)+' | تاریخ چاپ: '+esc(shamsi(new Date()))+'</p><div class="sum">'+$('v23FinSummary').innerHTML+'</div><table><thead>'+head+'</thead><tbody>'+$('v23FinBody').innerHTML+'</tbody></table></body></html>';
   window.__v23LastReportHtml=html;
@@ -4340,8 +4340,8 @@ window.v16DecodeQr=fromQR;
    <div class="v24-grid"><div class="v24-f full"><label for="v24Dest">یک مقصد (اختیاری)</label><input id="v24Dest" maxlength="40" placeholder="مثلاً رشت"><small>می‌توانید خالی بگذارید و بعداً از تنظیمات › مسیرها و مقصدها اضافه کنید.</small></div></div>
    <h3>۳. ورود مدیر</h3>
    <div class="v24-grid">
-    <div class="v24-f"><label for="v24User">نام کاربری مدیر *</label><input id="v24User" dir="ltr" maxlength="40" value="09126862669"></div>
-    <div class="v24-f"><label for="v24Pass">رمز عبور *</label><input id="v24Pass" dir="ltr" maxlength="100" value="09126862669"><small>پیش‌فرض همان شماره است؛ بعد از ورود از تنظیمات › کاربران عوضش کنید.</small></div>
+    <div class="v24-f"><label for="v24User">نام کاربری مدیر *</label><input id="v24User" dir="ltr" maxlength="40"></div>
+    <div class="v24-f"><label for="v24Pass">رمز عبور *</label><input id="v24Pass" dir="ltr" maxlength="100"><small>رمز عبور محدودیتی ندارد و بعداً از تنظیمات › کاربران قابل تغییر است.</small></div>
    </div>
    <div class="v24-msg err" id="v24SetupMsg" role="alert"></div>
    <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><button class="v24-btn" type="submit">ذخیره و ورود به برنامه</button>${SIGN}</div>
@@ -4401,7 +4401,7 @@ window.v16DecodeQr=fromQR;
     <div class="v24-f full"><label for="v24sAddr">آدرس</label><textarea id="v24sAddr" rows="2" maxlength="240"></textarea></div>
    </div>
    <div style="margin-top:16px"><button class="v24-btn" type="button" id="v24sSave">ذخیره اطلاعات شرکت</button></div><div class="v24-msg" id="v24sMsg"></div></div>
-   <div class="sm-card"><div class="sm-card-head"><div><h5>درباره برنامه</h5><p>اتوبنز وحدت — نسخه ۱٫۱٫۰</p></div></div>${SIGN}</div>`;
+   <div class="sm-card"><div class="sm-card-head"><div><h5>درباره برنامه</h5><p>اتوبنز وحدت — نسخه ۱٫۰٫۰</p></div></div>${SIGN}</div>`;
   host.appendChild(pg);
   const fill=()=>{const c=company()||{};$('v24sName').value=c.name||'';$('v24sPhone').value=c.phone||'';$('v24sOrigin').value=c.origin||'';$('v24sAddr').value=c.address||''};
   $('v24sSave').onclick=()=>{
@@ -4454,10 +4454,10 @@ window.v16DecodeQr=fromQR;
  }
 
  function tweakSettingsLabels(){
-  const p=panel.querySelector('.sm-preview-label');if(p)p.textContent='نسخه ۱٫۱';
+  const p=panel.querySelector('.sm-preview-label');if(p)p.textContent='نسخه ۱';
   const t=panel.querySelector('.sm-toolbar-tip');
   if(t&&t.lastChild)t.lastChild.nodeValue=window.autobenzDesktop?' ذخیره در پایگاه‌داده‌ی همین رایانه':' ذخیره در همین مرورگر';
-  const f=panel.querySelector('.sm-side-foot');if(f){f.innerHTML='<span class="sm-status-circle"></span> اتوبنز وحدت · نسخه ۱٫۱٫۰ <small>طراحی: سعید فداییان</small>'}
+  const f=panel.querySelector('.sm-side-foot');if(f){f.innerHTML='<span class="sm-status-circle"></span> اتوبنز وحدت · نسخه ۱٫۰٫۰ <small>طراحی: سعید فداییان</small>'}
   const box=panel.querySelector('.sm-preview-box');
   if(box){
    const d=window.autobenzDesktop;
@@ -4469,6 +4469,365 @@ window.v16DecodeQr=fromQR;
  if(panel){buildCompany();buildBackup();tweakSettingsLabels()}
  applyCompany();
  if(!company()&&!hasUsers())showSetup();
+})();
+</script>
+<style id="v25-styles">
+/* V25 */
+.v25-date{display:inline-flex;align-items:center;gap:4px;position:relative}
+.v25-date input{width:132px;border:1px solid #c5d4e3;border-radius:10px;padding:8px 10px;font:inherit;color:#163e62;background:#fff;box-sizing:border-box;text-align:center}
+.v25-date input:focus{outline:0;border-color:#327db5;box-shadow:0 0 0 3px #ddeefa}
+.v25-date button{border:1px solid #c5d4e3;background:#eef5ff;border-radius:10px;padding:6px 9px;cursor:pointer;font-size:15px}
+.v25-cal{position:absolute;z-index:200000;width:292px;background:#fff;border:1px solid #b9cbe0;border-radius:14px;box-shadow:0 12px 36px #12365866;padding:10px;font-family:inherit}
+.v25-cal-head{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:6px}
+.v25-cal-head b{flex:1;text-align:center;color:#123658;font-size:14.5px}
+.v25-cal-head button,.v25-cal-foot button{border:1px solid #d3e0ee;background:#f3f8fe;border-radius:8px;padding:4px 9px;cursor:pointer;font:inherit;color:#123658}
+.v25-cal-week,.v25-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.v25-cal-week span{color:#6385a0;font-size:12px;padding:3px 0}
+.v25-cal-grid button{border:0;background:#f7faff;border-radius:8px;padding:7px 0;cursor:pointer;font:inherit;color:#163e62}
+.v25-cal-grid button:hover{background:#dcebfa}
+.v25-cal-grid button.today{outline:2px solid #f2ad2d}
+.v25-cal-grid button.sel{background:#123658;color:#fff}
+.v25-cal-foot{display:flex;justify-content:space-between;margin-top:8px}
+.v25-range{display:inline-flex;align-items:center;gap:8px;margin-inline:10px}
+.v25-range[hidden],.v25-range label[hidden],.v25-range .v25-date[hidden]{display:none}
+.v25-filters{background:#fff;border:1px solid #dbe6f2;border-radius:14px;padding:14px 16px;margin:10px 0}
+.v25-fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 14px;align-items:start}
+.v25-tabs{display:flex;gap:8px;margin:10px 0}
+.v25-tabs button{border:1px solid #c5d4e3;background:#eef5ff;color:#123658;border-radius:11px;padding:10px 18px;font:inherit;font-weight:800;cursor:pointer}
+.v25-tabs button.on{background:#123658;color:#fff;border-color:#123658}
+.v25-tag{display:inline-block;background:#e5f0fb;color:#123658;border-radius:8px;padding:2px 9px;font-weight:800;font-size:12.5px}
+.v25-tag.bad{background:#fde3e1;color:#b3261e}
+.v25-ov{position:fixed;inset:0;z-index:150000;background:#0b1f3499;display:flex;align-items:center;justify-content:center;padding:18px}
+.v25-dlg{background:#fff;border-radius:18px;max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:22px 26px;box-shadow:0 20px 60px #0007}
+.v25-dlg.wide{max-width:760px}
+.v25-dlg h3{margin:0 0 12px;font-size:20px;color:#123658}
+.v25-dlg-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.v25-kvs{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.v25-kv{display:flex;justify-content:space-between;gap:10px;background:#f7faff;border:1px solid #e1eaf4;border-radius:10px;padding:8px 12px}
+.v25-kv.full{margin-top:8px}.v25-kv span{color:#6385a0}
+.v25-mini{width:100%;border-collapse:collapse;font-size:13px}.v25-mini th,.v25-mini td{border:1px solid #d3dfeb;padding:6px 8px;text-align:right;vertical-align:top}.v25-mini th{background:#eef5ff}
+.v25-destbtns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.v25-dest{border:2px solid #c5d4e3;background:#fff;color:#123658;border-radius:14px;padding:11px 22px;font:inherit;font-size:16px;font-weight:900;cursor:pointer;min-width:96px;transition:.12s}
+.v25-dest:hover{background:#eef5ff;border-color:#327db5}
+.v25-dest.on{background:linear-gradient(110deg,#fbd17e,#f2ad2d);border-color:#f2ad2d;color:#102e4d;box-shadow:0 4px 12px #f2ad2d55}
+.v25-destnone{color:#6385a0}
+.v25-bigselect{font-size:16px!important;font-weight:800;min-height:46px}
+#v25AuditPanel[hidden]{display:none}
+@media(max-width:720px){.v25-kvs{grid-template-columns:1fr}}
+</style>
+<script id="v25-main">
+/* V25 (version 1): Shamsi date picker, range finance report, report filters, edit/cancel + audit log,
+   destination buttons, single package type, handoff/receive fixes. */
+(function(){
+ const $=id=>document.getElementById(id);
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const rdJ=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??f}catch(_){return f}};
+ const wrJ=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}};
+ const fa=n=>String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+ const toLatin=s=>String(s??'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+ const money=n=>new Intl.NumberFormat('fa-IR').format(Number(n)||0);
+ const UIK='autobenz-ui-v25',AUDK='autobenz-audit-v25';
+ const ui=()=>({destMode:'buttons',multiPackage:false,...(rdJ(UIK,{})||{})});
+ const saveUi=p=>wrJ(UIK,{...ui(),...p});
+ const can=p=>typeof window.v23Can==='function'?window.v23Can(p):true;
+ const isAdm=()=>typeof window.v23IsAdmin==='function'?window.v23IsAdmin():true;
+ const userName=()=>typeof window.v23UserName==='function'?(window.v23UserName()||'—'):'—';
+
+ /* ================= Shamsi calendar ================= */
+ const pf=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric',timeZone:'UTC'});
+ const pfT=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric',timeZone:'Asia/Tehran'});
+ const parts=(f,d)=>{const p=f.formatToParts(d),g=t=>+p.find(x=>x.type===t).value;return{y:g('year'),m:g('month'),d:g('day')}};
+ const jkey=j=>j.y*10000+j.m*100+j.d;
+ const keyOfTs=ts=>{const t=Date.parse(ts);return t?jkey(parts(pfT,new Date(t))):0};
+ function nowruz(jy){for(let day=17;day<=23;day++){const d=new Date(Date.UTC(jy+621,2,day)),j=parts(pf,d);if(j.y===jy&&j.m===1&&j.d===1)return d}return new Date(Date.UTC(jy+621,2,21))}
+ function firstWeekday(jy,jm){const doy=jm<=6?(jm-1)*31:186+(jm-7)*30;const d=new Date(nowruz(jy).getTime()+doy*86400000);return (d.getUTCDay()+1)%7} // Saturday=0
+ function monthLen(jy,jm){if(jm<=6)return 31;if(jm<=11)return 30;return Math.round((nowruz(jy+1)-nowruz(jy))/86400000)===366?30:29}
+ const MONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+ const todayJ=()=>parts(pfT,new Date());
+ function parseJ(str){const m=/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/.exec(toLatin(str).trim());if(!m)return null;const y=+m[1],mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>monthLen(y,mo))return null;return{y,m:mo,d}}
+ const fmtJ=j=>j?`${j.y}/${String(j.m).padStart(2,'0')}/${String(j.d).padStart(2,'0')}`:'';
+ window.v25Cal={parseJ,keyOfTs,jkey,fmtJ,todayJ};
+
+ let pop=null;
+ function closePop(){if(pop){pop.remove();pop=null}document.removeEventListener('mousedown',outside,true)}
+ function outside(e){if(pop&&!pop.contains(e.target)&&!e.target.closest('.v25-date'))closePop()}
+ function openPicker(input){
+  closePop();
+  let cur=parseJ(input.value)||todayJ(),vy=cur.y,vm=cur.m;
+  pop=document.createElement('div');pop.className='v25-cal';pop.dir='rtl';
+  document.body.appendChild(pop);
+  const place=()=>{const r=input.getBoundingClientRect();pop.style.top=(r.bottom+window.scrollY+4)+'px';pop.style.left=Math.max(8,Math.min(window.innerWidth-300,r.right-292)+window.scrollX)+'px'};
+  function draw(){
+   const sel=parseJ(input.value),t=todayJ(),start=firstWeekday(vy,vm),len=monthLen(vy,vm);
+   let cells='';for(let i=0;i<start;i++)cells+='<span></span>';
+   for(let d=1;d<=len;d++){const isSel=sel&&sel.y===vy&&sel.m===vm&&sel.d===d,isT=t.y===vy&&t.m===vm&&t.d===d;cells+=`<button type="button" data-d="${d}" class="${isSel?'sel':''} ${isT?'today':''}">${fa(d)}</button>`}
+   pop.innerHTML=`<div class="v25-cal-head"><button type="button" data-nav="-12" title="سال قبل">«</button><button type="button" data-nav="-1" title="ماه قبل">‹</button><b>${MONTHS[vm-1]} ${fa(vy)}</b><button type="button" data-nav="1" title="ماه بعد">›</button><button type="button" data-nav="12" title="سال بعد">»</button></div>
+    <div class="v25-cal-week">${['ش','ی','د','س','چ','پ','ج'].map(x=>`<span>${x}</span>`).join('')}</div><div class="v25-cal-grid">${cells}</div>
+    <div class="v25-cal-foot"><button type="button" data-today>امروز</button><button type="button" data-clear>پاک کردن</button></div>`;
+  }
+  pop.addEventListener('click',e=>{
+   const b=e.target.closest('button');if(!b)return;
+   if(b.dataset.nav){const n=+b.dataset.nav;let tm=vm+n,ty=vy;while(tm>12){tm-=12;ty++}while(tm<1){tm+=12;ty--}vy=ty;vm=tm;draw();return}
+   if(b.dataset.d){input.value=fmtJ({y:vy,m:vm,d:+b.dataset.d});input.dispatchEvent(new Event('change',{bubbles:true}));closePop();return}
+   if('today' in b.dataset){input.value=fmtJ(todayJ());input.dispatchEvent(new Event('change',{bubbles:true}));closePop();return}
+   if('clear' in b.dataset){input.value='';input.dispatchEvent(new Event('change',{bubbles:true}));closePop()}
+  });
+  draw();place();setTimeout(()=>document.addEventListener('mousedown',outside,true),0);
+ }
+ function dateInput(id,ph){
+  const wrap=document.createElement('span');wrap.className='v25-date';
+  wrap.innerHTML=`<input id="${id}" type="text" dir="ltr" placeholder="${ph||'1405/01/01'}" autocomplete="off" maxlength="10"><button type="button" tabindex="-1" aria-label="باز کردن تقویم">📅</button>`;
+  const inp=wrap.querySelector('input');
+  wrap.querySelector('button').addEventListener('click',()=>openPicker(inp));
+  inp.addEventListener('focus',()=>openPicker(inp));
+  inp.addEventListener('input',()=>{const v=toLatin(inp.value).replace(/[^0-9\/]/g,'');if(v!==inp.value)inp.value=v});
+  inp.addEventListener('keydown',e=>{if(e.key==='Escape')closePop()});
+  return wrap;
+ }
+
+ /* ================= generic dialog + print ================= */
+ function dialog(title,bodyHtml,buttons,opts={}){
+  const ov=document.createElement('div');ov.className='v25-ov';ov.dir='rtl';
+  ov.innerHTML=`<div class="v25-dlg ${opts.wide?'wide':''}" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><div class="v25-dlg-body">${bodyHtml}</div><div class="v25-dlg-btns"></div></div>`;
+  const close=()=>{ov.remove();document.removeEventListener('keydown',onKey,true)};
+  const onKey=e=>{if(e.key==='Escape'){e.stopPropagation();close()}};
+  document.addEventListener('keydown',onKey,true);
+  const box=ov.querySelector('.v25-dlg-btns');
+  buttons.forEach(b=>{const el=document.createElement('button');el.type='button';el.className='v24-btn '+(b.cls||'alt');el.textContent=b.label;el.onclick=()=>b.onClick?b.onClick(close,ov):close();box.appendChild(el)});
+  document.body.appendChild(ov);return{close,el:ov};
+ }
+ window.v25Dialog=dialog;
+ const PRINT_CSS='@page{size:A4;margin:0}*{box-sizing:border-box}html,body{margin:0}body{direction:rtl;color:#111;font-size:11px;line-height:1.65;padding:12mm}h1{font-size:16px;margin:0 0 3px;padding-bottom:5px;border-bottom:2px solid #222}p.meta{margin:0 0 8px;color:#444;font-size:10.5px}table{width:100%;border-collapse:collapse;font-size:10.5px}th,td{border:1px solid #999;padding:2px 5px;text-align:right;vertical-align:top}th{background:#e9eef4}tbody tr:nth-child(even){background:#f7f8fa}thead{display:table-header-group}tr{break-inside:avoid}.sign{margin-top:10px;color:#666;font-size:9.5px;text-align:center}';
+ function printHtml(title,meta,tableHtml){
+  const font=(getComputedStyle(document.body).fontFamily||'Tahoma').replace(/"/g,"'");
+  const html='<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:'+font+'}'+PRINT_CSS+'</style></head><body><h1>'+esc(title)+' — اتوبنز وحدت</h1><p class="meta">'+esc(meta)+'</p>'+tableHtml+'</body></html>';
+  const old=$('v25PrintFrame');if(old)old.remove();
+  const f=document.createElement('iframe');f.id='v25PrintFrame';f.setAttribute('aria-hidden','true');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  let done=false;
+  f.onload=()=>{if(done)return;done=true;try{f.contentWindow.addEventListener('afterprint',()=>{window.focus();setTimeout(()=>f.remove(),500)});f.contentWindow.focus();f.contentWindow.print()}catch(e){console.warn(e)}window.focus();setTimeout(()=>{if(f.isConnected)f.remove()},120000)};
+  f.srcdoc=html;document.body.appendChild(f);
+ }
+
+ /* ================= finance: day / range ================= */
+ let finCustom=null;
+ window.v25InCustom=function(ts,mode){
+  const k=keyOfTs(ts);if(!k||!finCustom)return false;
+  if(mode==='day')return finCustom.from?k===jkey(finCustom.from):true;
+  return (!finCustom.from||k>=jkey(finCustom.from))&&(!finCustom.to||k<=jkey(finCustom.to));
+ };
+ window.v25FinLabel=function(){
+  const sel=$('v23FinPeriod');if(!sel)return '';
+  if(sel.value==='day')return 'روز '+(finCustom&&finCustom.from?fmtJ(finCustom.from):'—');
+  if(sel.value==='range')return 'از '+(finCustom&&finCustom.from?fmtJ(finCustom.from):'ابتدا')+' تا '+(finCustom&&finCustom.to?fmtJ(finCustom.to):'امروز');
+  return sel.selectedOptions[0].textContent;
+ };
+ function buildFinance(){
+  const sel=$('v23FinPeriod');if(!sel)return;
+  sel.insertAdjacentHTML('beforeend','<option value="day">یک روز مشخص</option><option value="range">از تاریخ تا تاریخ</option>');
+  const box=document.createElement('span');box.id='v25FinRange';box.className='v25-range';box.hidden=true;
+  box.innerHTML='<label id="v25FinFromL">تاریخ</label>';
+  box.appendChild(dateInput('v25FinFrom'));
+  const toL=document.createElement('label');toL.id='v25FinToL';toL.textContent='تا';box.appendChild(toL);box.appendChild(dateInput('v25FinTo'));
+  sel.insertAdjacentElement('afterend',box);
+  const sync=()=>{
+   const m=sel.value,show=m==='day'||m==='range';box.hidden=!show;$('v25FinToL').hidden=$('v25FinTo').parentNode.hidden=m!=='range';$('v25FinFromL').textContent=m==='range'?'از تاریخ':'تاریخ';
+   finCustom={from:parseJ($('v25FinFrom').value),to:parseJ($('v25FinTo').value)};
+  };
+  sel.addEventListener('change',sync,true);
+  ['v25FinFrom','v25FinTo'].forEach(id=>$(id).addEventListener('change',()=>{sync();sel.dispatchEvent(new Event('change'))}));
+  sync();
+ }
+
+ /* ================= reports: filters ================= */
+ const STATUSES=['صادرشده','در مسیر','منتظر ترخیص','ترخیص‌شده','باطل‌شده'];
+ const statusOf=r=>r.status==='دریافت‌شده در مقصد'?'منتظر ترخیص':(r.status||'صادرشده');
+ window.v25ReportFilter=function(){
+  const g=id=>$(id)?$(id).value:'';
+  return{status:g('v25RStatus'),recipient:g('v25RRecipient').trim(),from:parseJ(g('v25RFrom')),to:parseJ(g('v25RTo'))};
+ };
+ window.v25ReportPass=function(r){
+  const f=window.v25ReportFilter();
+  if(f.status&&statusOf(r)!==f.status)return false;
+  if(f.recipient&&!String(r.recipientName||'').toLowerCase().includes(f.recipient.toLowerCase()))return false;
+  if(f.from||f.to){const k=keyOfTs(r.handedAt);if(!k)return false;if(f.from&&k<jkey(f.from))return false;if(f.to&&k>jkey(f.to))return false}
+  return true;
+ };
+ function buildReports(){
+  const view=$('v21DriverReportView');if(!view)return;
+  const head=view.querySelector('.v19-head p');if(head)head.textContent='فیلتر بر اساس راننده، گیرنده، تاریخ تحویل و وضعیت';
+  const hh=view.querySelector('.v19-head h2');if(hh)hh.textContent='گزارش بارنامه‌ها';
+  const ctl=view.querySelector('.v21-report-controls');
+  const row=document.createElement('div');row.className='v25-filters';
+  row.innerHTML=`<div class="v25-fgrid">
+   <div class="v24-f"><label for="v25RRecipient">نام گیرنده</label><input id="v25RRecipient" placeholder="بخشی از نام گیرنده"></div>
+   <div class="v24-f"><label for="v25RStatus">وضعیت</label><select id="v25RStatus"><option value="">همه‌ی وضعیت‌ها</option>${STATUSES.map(s=>`<option value="${s}" ${s==='در مسیر'?'selected':''}>${s}</option>`).join('')}</select></div>
+   <div class="v24-f" id="v25RFromW"><label>تحویل از تاریخ</label></div><div class="v24-f" id="v25RToW"><label>تا تاریخ</label></div>
+   <div class="v24-f" style="align-self:end"><button type="button" class="v24-btn alt" id="v25RReset">پاک کردن فیلترها</button></div></div>`;
+  ctl.insertAdjacentElement('afterend',row);
+  $('v25RFromW').appendChild(dateInput('v25RFrom'));$('v25RToW').appendChild(dateInput('v25RTo'));
+  const rerender=()=>$('v21ReportRefresh').click();
+  ['v25RRecipient','v25RStatus','v25RFrom','v25RTo'].forEach(id=>{$(id).addEventListener('input',rerender);$(id).addEventListener('change',rerender)});
+  $('v25RReset').onclick=()=>{$('v25RRecipient').value='';$('v25RStatus').value='';$('v25RFrom').value='';$('v25RTo').value='';$('v21ReportDriver').value='';rerender()};
+  const labels=view.querySelectorAll('.v21-report-stats span');if(labels[0])labels[0].textContent='تعداد بارنامه‌های فهرست';if(labels[1])labels[1].textContent='تعداد رانندگان فهرست';
+  const small=view.querySelector('.v19-card-head small');if(small)small.textContent='بر اساس فیلترهای بالا';
+  const h3=view.querySelectorAll('.v19-card-head h3')[0];if(h3)h3.textContent='فهرست بارنامه‌ها';
+  // tabs
+  const tabs=document.createElement('div');tabs.className='v25-tabs';
+  tabs.innerHTML='<button type="button" class="on" data-t="list">فهرست بارنامه‌ها</button><button type="button" data-t="audit" id="v25TabAudit">ویرایش‌ها و ابطال‌ها</button>';
+  view.querySelector('.v19-head').insertAdjacentElement('afterend',tabs);
+  const listParts=[...view.children].filter(el=>!el.classList.contains('v19-head')&&el!==tabs);
+  const auditPanel=document.createElement('section');auditPanel.id='v25AuditPanel';auditPanel.hidden=true;view.appendChild(auditPanel);
+  tabs.addEventListener('click',e=>{
+   const b=e.target.closest('button');if(!b)return;
+   if(b.dataset.t==='audit'&&!(isAdm()||can('audit'))){window.v23Alert&&window.v23Alert('دسترسی ندارید','برای دیدن این گزارش مجوز «گزارش ویرایش‌ها و ابطال‌ها» لازم است.');return}
+   tabs.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+   const aud=b.dataset.t==='audit';listParts.forEach(el=>el.hidden=aud);auditPanel.hidden=!aud;
+   if(aud)renderAudit();
+  });
+ }
+
+ /* ================= audit log ================= */
+ const FIELDS=[['senderName','نام فرستنده'],['senderMobile','موبایل فرستنده'],['senderPhone','تلفن فرستنده'],['senderAddress','آدرس فرستنده'],['recipientName','نام گیرنده'],['recipientMobile','موبایل گیرنده'],['recipientPhone','تلفن گیرنده'],['recipientAddress','آدرس گیرنده'],['destination','مقصد'],['preFare','پیش‌کرایه'],['postFare','پس‌کرایه'],['storageFee','انبارداری'],['otherFee','سایر هزینه‌ها'],['total','جمع کل'],['waybillNotes','توضیحات']];
+ const MONEY=new Set(['preFare','postFare','storageFee','otherFee','total']);
+ const pkgText=r=>(r.packages||[]).map(p=>`${p.title||'—'}${p.kind?' ('+p.kind+')':''} × ${p.qty}${p.weight?' · '+p.weight+' کیلو':''}`).join(' | ')||'—';
+ const view=(k,v)=>MONEY.has(k)?money(v)+' تومان':(String(v??'').trim()||'—');
+ const auditRead=()=>{const a=rdJ(AUDK,[]);return Array.isArray(a)?a:[]};
+ function auditAdd(e){const a=auditRead();a.push({n:a.length+1,at:new Date().toISOString(),user:userName(),...e});wrJ(AUDK,a)}
+ window.v25AuditEdit=function(oldR,newR){
+  const changes=[];
+  FIELDS.forEach(([k,l])=>{const a=MONEY.has(k)?Number(oldR[k])||0:String(oldR[k]??'').trim(),b=MONEY.has(k)?Number(newR[k])||0:String(newR[k]??'').trim();if(a!==b)changes.push({f:l,from:view(k,oldR[k]),to:view(k,newR[k])})});
+  const pa=pkgText(oldR),pb=pkgText(newR);if(pa!==pb)changes.push({f:'مشخصات بسته',from:pa,to:pb});
+  if(changes.length)auditAdd({type:'edit',rid:String(newR.id),changes});
+ };
+ const auditOf=id=>auditRead().filter(x=>String(x.rid)===String(id));
+ const jDateTime=ts=>{try{return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Tehran'}).format(new Date(ts))}catch(_){return ts}};
+ function auditRows(){
+  const g=id=>$(id)?$(id).value:'';
+  const f={from:parseJ(g('v25AFrom')),to:parseJ(g('v25ATo')),user:g('v25AUser'),type:g('v25AType'),rid:toLatin(g('v25ARid')).trim()};
+  return auditRead().filter(x=>{
+   const k=keyOfTs(x.at);
+   if(f.from&&k<jkey(f.from))return false;if(f.to&&k>jkey(f.to))return false;
+   if(f.user&&x.user!==f.user)return false;if(f.type&&x.type!==f.type)return false;if(f.rid&&String(x.rid)!==f.rid)return false;return true;
+  }).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
+ }
+ const rowHtml=x=>`<tr><td>${esc(jDateTime(x.at))}</td><td><b>${esc(fa(x.rid))}</b></td><td>${x.type==='cancel'?'<span class="v25-tag bad">ابطال</span>':'<span class="v25-tag">ویرایش</span>'}</td><td>${esc(x.user)}</td><td>${x.type==='cancel'?'دلیل: '+esc(x.reason||'—'):(x.changes||[]).map(c=>`<div><b>${esc(c.f)}:</b> ${esc(c.from)} ← ${esc(c.to)}</div>`).join('')}</td></tr>`;
+ function renderAudit(){
+  const p=$('v25AuditPanel');if(!p)return;
+  if(!p.dataset.built){
+   p.dataset.built='1';
+   p.innerHTML=`<div class="v19-card"><div class="v25-fgrid">
+    <div class="v24-f" id="v25AFromW"><label>از تاریخ</label></div><div class="v24-f" id="v25AToW"><label>تا تاریخ</label></div>
+    <div class="v24-f"><label for="v25ARid">شماره بارنامه</label><input id="v25ARid" inputmode="numeric" dir="ltr"></div>
+    <div class="v24-f"><label for="v25AType">نوع</label><select id="v25AType"><option value="">همه</option><option value="edit">ویرایش</option><option value="cancel">ابطال</option></select></div>
+    <div class="v24-f"><label for="v25AUser">کاربر</label><select id="v25AUser"><option value="">همه‌ی کاربران</option></select></div>
+    <div class="v24-f" style="align-self:end;display:flex;gap:8px"><button type="button" class="v24-btn alt" id="v25AReset">پاک کردن فیلترها</button><button type="button" class="v24-btn" id="v25APrint">چاپ</button></div></div></div>
+    <section class="v19-card"><div class="v19-card-head"><span class="v19-symbol">▤</span><div><h3>ویرایش‌ها و ابطال‌ها</h3><small id="v25ACount"></small></div></div><div class="v21-table-scroll"><table class="v21-report-table"><thead><tr><th>تاریخ و ساعت</th><th>بارنامه</th><th>نوع</th><th>کاربر</th><th>تغییرات</th></tr></thead><tbody id="v25ABody"></tbody></table></div></section>`;
+   $('v25AFromW').appendChild(dateInput('v25AFrom'));$('v25AToW').appendChild(dateInput('v25ATo'));
+   ['v25AFrom','v25ATo','v25ARid','v25AType','v25AUser'].forEach(id=>{$(id).addEventListener('input',renderAudit);$(id).addEventListener('change',renderAudit)});
+   $('v25AReset').onclick=()=>{['v25AFrom','v25ATo','v25ARid','v25AType','v25AUser'].forEach(id=>$(id).value='');renderAudit()};
+   $('v25APrint').onclick=()=>{const rows=auditRows();printHtml('گزارش ویرایش‌ها و ابطال‌ها','تعداد: '+fa(rows.length)+' | تاریخ چاپ: '+jDateTime(new Date()),'<table><thead><tr><th>تاریخ و ساعت</th><th>بارنامه</th><th>نوع</th><th>کاربر</th><th>تغییرات</th></tr></thead><tbody>'+rows.map(rowHtml).join('')+'</tbody></table>')};
+   p.addEventListener('click',e=>{const b=e.target.closest('[data-rid]');if(b){$('v25ARid').value=b.dataset.rid;renderAudit()}});
+  }
+  const users=[...new Set(auditRead().map(x=>x.user))],cur=$('v25AUser').value;
+  $('v25AUser').innerHTML='<option value="">همه‌ی کاربران</option>'+users.map(u=>`<option ${u===cur?'selected':''}>${esc(u)}</option>`).join('');
+  const rows=auditRows();$('v25ACount').textContent=fa(rows.length)+' مورد';
+  $('v25ABody').innerHTML=rows.length?rows.map(x=>rowHtml(x).replace(`<b>${esc(fa(x.rid))}</b>`,`<b><a href="#" data-rid="${esc(x.rid)}" onclick="return false">${esc(fa(x.rid))}</a></b>`)).join(''):'<tr><td colspan="5" class="v19-empty">موردی ثبت نشده است.</td></tr>';
+ }
+
+ /* ================= record view / edit / cancel ================= */
+ const recs=()=>normalizeWaybillRecords(safeRead(recKey,[]));
+ window.v25ViewRecord=function(id){
+  const r=recs().find(x=>String(x.id)===String(id));if(!r)return;
+  const st=statusOf(r),log=auditOf(r.id),edits=log.filter(x=>x.type==='edit').length;
+  const row=(a,b)=>`<div class="v25-kv"><span>${a}</span><b>${b}</b></div>`;
+  const body=`<div class="v25-kvs">${row('شماره بارنامه',esc(fa(r.id)))}${row('وضعیت',`<span class="v25-tag ${st==='باطل‌شده'?'bad':''}">${esc(st)}</span>`)}${row('فرستنده',esc(r.senderName||'—'))}${row('گیرنده',esc(r.recipientName||'—'))}${row('مقصد',esc(r.destination||'—'))}${row('راننده',esc(r.driver||'—'))}${row('پیش‌کرایه',money(r.preFare)+' تومان')}${row('پس‌کرایه',money(r.postFare)+' تومان')}${row('انبارداری',money(r.storageFee)+' تومان')}${row('جمع کل',money(r.total)+' تومان')}</div>
+   <div class="v25-kv full"><span>مشخصات بار</span><b>${esc(pkgText(r))}</b></div>
+   ${edits?`<div class="v24-info" style="margin-top:12px">این بارنامه ${fa(edits)} بار ویرایش شده است. <a href="#" id="v25ViewLog">مشاهده‌ی سابقه</a></div>`:''}
+   ${st==='باطل‌شده'?`<div class="v24-warn" style="margin-top:12px">باطل شده توسط <b>${esc(r.cancelledBy||'—')}</b> در ${esc(r.cancelledAt?jDateTime(r.cancelledAt):'—')}<br>دلیل: ${esc(r.cancelReason||'—')}</div>`:''}`;
+  const btns=[];
+  if(st==='صادرشده'&&can('editBill'))btns.push({label:'ویرایش بارنامه',cls:'',onClick:close=>{close();blankForm();fillForm(r);showView('waybill')}});
+  if(st!=='باطل‌شده')btns.push({label:'چاپ نسخه ثبت‌شده',onClick:close=>{close();printWaybill(r)}});
+  if(st!=='باطل‌شده'&&st!=='ترخیص‌شده'&&(isAdm()||can('cancelBill')))btns.push({label:'ابطال بارنامه',cls:'warn',onClick:close=>{close();askCancel(r)}});
+  btns.push({label:'بستن'});
+  const d=dialog('جزئیات بارنامه '+fa(r.id),body,btns,{wide:true});
+  const lk=d.el.querySelector('#v25ViewLog');if(lk)lk.onclick=e=>{e.preventDefault();d.close();showLog(r.id)};
+ };
+ function showLog(id){
+  const rows=auditOf(id).sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+  dialog('سابقه‌ی بارنامه '+fa(id),rows.length?`<table class="v25-mini"><thead><tr><th>تاریخ و ساعت</th><th>نوع</th><th>کاربر</th><th>تغییرات</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(jDateTime(x.at))}</td><td>${x.type==='cancel'?'ابطال':'ویرایش'}</td><td>${esc(x.user)}</td><td>${x.type==='cancel'?'دلیل: '+esc(x.reason||'—'):(x.changes||[]).map(c=>`<div><b>${esc(c.f)}:</b> ${esc(c.from)} ← ${esc(c.to)}</div>`).join('')}</td></tr>`).join('')}</tbody></table>`:'<p>سابقه‌ای ثبت نشده است.</p>',[{label:'بستن'}],{wide:true});
+ }
+ function askCancel(r){
+  const d=dialog('ابطال بارنامه '+fa(r.id),`<p>با ابطال، بارنامه حذف نمی‌شود و شماره‌اش می‌ماند، ولی دیگر قابل تحویل، دریافت یا ترخیص نیست. این کار برگشت‌پذیر نیست.</p><div class="v24-f"><label for="v25Reason">دلیل ابطال *</label><textarea id="v25Reason" rows="3" maxlength="300"></textarea></div><div class="v24-msg err" id="v25ReasonMsg"></div>`,[
+   {label:'تأیید ابطال',cls:'warn',onClick:close=>{
+    const reason=$('v25Reason').value.trim();if(!reason){$('v25ReasonMsg').textContent='نوشتن دلیل الزامی است.';return}
+    const list=recs(),i=list.findIndex(x=>String(x.id)===String(r.id));if(i<0)return;
+    const cur=statusOf(list[i]);if(cur==='باطل‌شده'||cur==='ترخیص‌شده'){$('v25ReasonMsg').textContent='این بارنامه دیگر قابل ابطال نیست.';return}
+    list[i]={...list[i],status:'باطل‌شده',cancelledAt:new Date().toISOString(),cancelledBy:userName(),cancelReason:reason,statusBeforeCancel:cur};
+    if(!safeWrite(recKey,list)){$('v25ReasonMsg').textContent='ذخیره انجام نشد.';return}
+    records=list;auditAdd({type:'cancel',rid:String(r.id),reason,fromStatus:cur});
+    close();try{renderDashboard()}catch(_){}
+    window.v23Alert&&window.v23Alert('بارنامه '+fa(r.id)+' باطل شد','سابقه‌ی ابطال در گزارش‌ها › ویرایش‌ها و ابطال‌ها ثبت شد.');
+   }},{label:'انصراف'}]);
+  setTimeout(()=>$('v25Reason').focus(),30);
+ }
+
+ /* ================= form options: destination buttons, single package ================= */
+ function buildDestButtons(selId,hostId){
+  const sel=$(selId);if(!sel)return;
+  let host=$(hostId);if(!host){host=document.createElement('div');host.id=hostId;host.className='v25-destbtns';sel.insertAdjacentElement('afterend',host)}
+  function draw(){
+   const mode=ui().destMode;sel.classList.toggle('v25-bigselect',mode==='list');
+   host.hidden=mode!=='buttons';sel.style.display=mode==='buttons'?'none':'';
+   if(mode!=='buttons')return;
+   const opts=[...sel.options].filter(o=>o.value);
+   host.innerHTML=opts.length?opts.map(o=>`<button type="button" class="v25-dest ${o.value===sel.value?'on':''}" data-v="${esc(o.value)}">${esc(o.textContent)}</button>`).join(''):'<span class="v25-destnone">'+esc(sel.options[0]?sel.options[0].textContent:'')+'</span>';
+  }
+  host.addEventListener('click',e=>{const b=e.target.closest('.v25-dest');if(!b)return;sel.value=b.dataset.v;sel.dispatchEvent(new Event('change',{bubbles:true}));draw()});
+  sel.addEventListener('change',draw);
+  new MutationObserver(draw).observe(sel,{childList:true});
+  window.addEventListener('autobenz:ui-changed',draw);
+  draw();
+ }
+ function packageRules(){
+  const add=$('addPackage'),chips=$('v23TitleChips');
+  const apply=()=>{if(add)add.hidden=!ui().multiPackage};
+  apply();window.addEventListener('autobenz:ui-changed',apply);
+  if(add)add.addEventListener('click',e=>{if(!ui().multiPackage&&document.querySelectorAll('#packagesBody tr').length>=1){e.stopImmediatePropagation();e.preventDefault()}},true);
+  if(chips)chips.addEventListener('click',e=>{
+   const b=e.target.closest('[data-v23-title]');if(!b||ui().multiPackage)return;
+   e.stopImmediatePropagation();const t=b.dataset.v23Title,rows=[...document.querySelectorAll('#packagesBody tr')];
+   if(!rows.length){packageRow({title:t});recountPackages();return}
+   const first=rows[0],inp=first.querySelector('.package-title');
+   rows.slice(1).forEach(tr=>tr.remove());
+   if(inp.value!==t){inp.value=t;if(window.v23SyncLabel)window.v23SyncLabel(first)}
+   inp.dispatchEvent(new Event('change',{bubbles:true}));recountPackages();
+  },true);
+ }
+ function buildFormOptions(){
+  const host=(()=>{const p=document.querySelector('#settingsPanel [data-sm-page="users"]');return p?p.parentNode:null})();if(!host)return;
+  const pg=document.createElement('section');pg.className='sm-page';pg.dataset.smPage='formopts';pg.hidden=true;
+  pg.innerHTML=`<div class="sm-card"><div class="sm-card-head"><div><h5>گزینه‌های فرم</h5><p>تغییرها بلافاصله اعمال می‌شود.</p></div></div>
+   <div class="v24-grid"><div class="v24-f"><label for="v25OptDest">نمایش مقصد در فرم صدور و تحویل به راننده</label><select id="v25OptDest"><option value="buttons">دکمه‌های درشت</option><option value="list">لیست باز</option></select><small>اگر مقصدها زیاد شدند، «لیست باز» مناسب‌تر است.</small></div>
+   <div class="v24-f"><label for="v25OptPkg">انتخاب نوع بسته در یک بارنامه</label><select id="v25OptPkg"><option value="single">فقط یک نوع (انتخاب جدید جایگزین قبلی می‌شود)</option><option value="multi">چند نوع (هر نوع یک ردیف)</option></select><small>در حالت «یک نوع»، تعداد و وزن ردیف هنگام تعویض حفظ می‌شود.</small></div></div></div>`;
+  host.appendChild(pg);
+  const nav=document.querySelector('#settingsPanel .sm-nav');
+  const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.dataset.smTab='formopts';
+  b.innerHTML='<span class="sm-ico" aria-hidden="true">☑</span><span>گزینه‌های فرم<small>مقصد، نوع بسته</small></span>';
+  nav.insertBefore(b,nav.querySelector('[data-sm-tab="routes"]'));
+  b.addEventListener('click',()=>{
+   $('v25OptDest').value=ui().destMode;$('v25OptPkg').value=ui().multiPackage?'multi':'single';
+   document.querySelectorAll('#settingsPanel [data-sm-tab]').forEach(x=>{const s=x===b;x.setAttribute('aria-selected',String(s));x.tabIndex=s?0:-1});
+   document.querySelectorAll('#settingsPanel [data-sm-page]').forEach(p=>p.hidden=p.dataset.smPage!=='formopts');
+   const set=(i,t)=>{const e=$(i);if(e)e.textContent=t};set('smBreadCrumb','گزینه‌های فرم');set('smSectionTitle','گزینه‌های فرم');set('smSectionDesc','نحوه‌ی انتخاب مقصد و نوع بسته');
+  });
+  $('v25OptDest').onchange=e=>{saveUi({destMode:e.target.value});window.dispatchEvent(new Event('autobenz:ui-changed'))};
+  $('v25OptPkg').onchange=e=>{saveUi({multiPackage:e.target.value==='multi'});window.dispatchEvent(new Event('autobenz:ui-changed'))};
+ }
+
+ /* ================= start ================= */
+ buildFinance();buildReports();buildFormOptions();
+ buildDestButtons('destination','v25DestBtnsForm');buildDestButtons('v20MainDestination','v25DestBtnsHandoff');
+ packageRules();
 })();
 </script>
 </body></html>

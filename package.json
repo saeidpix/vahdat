@@ -1,7 +1,7 @@
 {
   "name": "autobenz-vahdat",
   "productName": "Autobenz Vahdat",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "Autobenz Vahdat waybill software",
   "author": "Saeed Fadaeian",
   "main": "main.js",
