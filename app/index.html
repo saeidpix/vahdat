@@ -1165,7 +1165,7 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
   <header class="v19-head"><div><span class="v19-eyebrow">گزارش‌ها / مالی</span><h2>گزارش مالی ترخیص‌ها</h2><p>فقط بارنامه‌های ترخیص‌شده. درصد سهم شرکت از کرایه و سهم انباردار از انبارداری در تنظیمات (تعرفه‌ها و هزینه‌ها) تعیین می‌شود.</p></div><button type="button" class="v19-back" id="v23FinBack">بازگشت به صدور بارنامه</button></header>
   <div class="v19-card v23-fin-controls"><label for="v23FinPeriod">بازه ترخیص</label><select id="v23FinPeriod"><option value="today">امروز</option><option value="week">۷ روز اخیر</option><option value="month">ماه شمسی جاری</option><option value="all">همه</option></select><span id="v23FinCount" class="v19-count">۰ بارنامه</span><button type="button" class="v19-back" id="v23FinPrint">چاپ گزارش</button></div>
   <div id="v23FinSummary"></div>
-  <section class="v19-card"><div class="v19-card-head"><span class="v19-symbol">▤</span><div><h3>فهرست ترخیص‌ها</h3><small>مبالغ به تومان</small></div></div><div style="overflow:auto"><table><thead><tr><th>بارنامه</th><th>تاریخ ترخیص</th><th>پیش‌کرایه</th><th>پس‌کرایه</th><th>سهم شرکت</th><th>سهم راننده</th><th>انبارداری</th><th>سهم انباردار از انبارداری</th></tr></thead><tbody id="v23FinBody"></tbody></table></div></section>
+  <section class="v19-card"><div class="v19-card-head"><span class="v19-symbol">▤</span><div><h3>فهرست ترخیص‌ها</h3><small>مبالغ به تومان</small></div></div><div style="overflow:auto"><table><thead><tr><th>بارنامه</th><th>تاریخ ترخیص</th><th>پس‌کرایه</th><th>سهم شرکت</th><th>سهم راننده</th><th>انبارداری</th><th>سهم انباردار از انبارداری</th></tr></thead><tbody id="v23FinBody"></tbody></table></div></section>
   <p class="v19-local-note">پیش‌نمایش محلی؛ فقط بارهای ترخیص‌شده در همین مرورگر. درصدها هنگام ترخیص روی همان بارنامه ثبت می‌شوند و با تغییر بعدی تنظیمات، گزارش قدیمی عوض نمی‌شود.</p>
 </section>
 
@@ -4174,22 +4174,22 @@ window.v16DecodeQr=fromQR;
   const rows=histRecords().filter(r=>r.status==='ترخیص‌شده'&&r.releasedAt&&inPeriod(r.releasedAt,mode)).sort((a,b)=>Date.parse(b.releasedAt)-Date.parse(a.releasedAt));
   const m=fmtNum;let pre=0,post=0,company=0,driver=0,stCompany=0,stKeeper=0;
   const lines=rows.map(r=>{
-   const a=Number(r.preFare)||0,p=Number(r.postFare)||0,s=Number(r.storageFee)||0,fr=a+p,c=Math.round(fr*pctOf(r)/100),d=fr-c,k=Math.round(s*keeperPctOf(r)/100),sc=s-k;
+   const a=Number(r.preFare)||0,p=Number(r.postFare)||0,s=Number(r.storageFee)||0,fr=p,c=Math.round(fr*pctOf(r)/100),d=fr-c,k=Math.round(s*keeperPctOf(r)/100),sc=s-k;
    pre+=a;post+=p;company+=c;driver+=d;stKeeper+=k;stCompany+=sc;
-   return `<tr><td><b>${esc(digits(r.id))}</b></td><td>${esc(shamsi(new Date(r.releasedAt)))}</td><td>${m(a)}</td><td>${m(p)}</td><td>${m(c)}</td><td>${m(d)}</td><td>${m(s)}</td><td>${m(k)}</td></tr>`;
+   return `<tr><td><b>${esc(digits(r.id))}</b></td><td>${esc(shamsi(new Date(r.releasedAt)))}</td><td>${m(p)}</td><td>${m(c)}</td><td>${m(d)}</td><td>${m(s)}</td><td>${m(k)}</td></tr>`;
   });
-  const freight=pre+post,storage=stCompany+stKeeper,total=freight+storage,line=(k,v,sub)=>`<div class="v23-fin-line${sub?' is-sub':''}"><span>${k}</span><b>${m(v)} تومان</b></div>`;
+  const freight=post,storage=stCompany+stKeeper,total=freight+storage,line=(k,v,sub)=>`<div class="v23-fin-line${sub?' is-sub':''}"><span>${k}</span><b>${m(v)} تومان</b></div>`;
   $('v23FinSummary').innerHTML=
-   `<section class="v19-card v23-fin-box"><h3>بخش شرکت و راننده (کرایه)</h3>${line('پیش‌کرایه',pre,true)}${line('پس‌کرایه',post,true)}${line('جمع کرایه',freight,true)}${line('سهم شرکت',company)}${line('سهم راننده',driver)}</section>`+
+   `<section class="v19-card v23-fin-box"><h3>بخش شرکت و راننده (کرایه)</h3>${line('پس‌کرایه دریافتی در مقصد',post,true)}${line('سهم شرکت',company)}${line('سهم راننده',driver)}</section>`+
    `<section class="v19-card v23-fin-box"><h3>بخش انبارداری</h3>${line('سهم شرکت از انبارداری',stCompany)}${line('سهم انباردار از انبارداری',stKeeper)}${line('جمع انبارداری',storage,true)}</section>`+
-   `<div class="v23-fin-total"><span>جمع کل (کرایه + انبارداری)</span><span>${m(total)} تومان</span></div>`;
+   `<div class="v23-fin-total"><span>جمع کل (پس‌کرایه + انبارداری)</span><span>${m(total)} تومان</span></div>`;
   $('v23FinCount').textContent=digits(String(rows.length))+' بارنامه ترخیص‌شده';
-  $('v23FinBody').innerHTML=lines.length?lines.join(''):'<tr><td colspan="8" class="v19-empty">در این بازه ترخیصی ثبت نشده است.</td></tr>';
+  $('v23FinBody').innerHTML=lines.length?lines.join(''):'<tr><td colspan="7" class="v19-empty">در این بازه ترخیصی ثبت نشده است.</td></tr>';
  }
  const PRINT_CSS='@page{size:A4;margin:0}*{box-sizing:border-box}html,body{margin:0}body{direction:rtl;color:#111;font-size:11px;line-height:1.65;padding:12mm}h1{font-size:16px;margin:0 0 3px;padding-bottom:5px;border-bottom:2px solid #222}p.meta{margin:0 0 8px;color:#444;font-size:10.5px}.sum{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;margin-bottom:8px}.v23-fin-box{border:1px solid #999;border-radius:4px;padding:1px 10px 5px;break-inside:avoid}h3{margin:4px 0 2px;font-size:12px}.v23-fin-line{display:flex;justify-content:space-between;gap:10px;padding:1.5px 0;border-bottom:1px dashed #bbb}.v23-fin-line:last-child{border-bottom:0}.v23-fin-line.is-sub{color:#555}.v23-fin-total{grid-column:1/-1;display:flex;justify-content:space-between;border:1.5px solid #222;border-radius:4px;padding:4px 10px;font-weight:bold;font-size:13px;background:#f3f3f3}table{width:100%;border-collapse:collapse;font-size:10.5px}th,td{border:1px solid #999;padding:2px 5px;text-align:right}th{background:#e9eef4;font-weight:bold}tbody tr:nth-child(even){background:#f7f8fa}thead{display:table-header-group}tr{break-inside:avoid}';
  function printFinance(){
   const per=$('v23FinPeriod').selectedOptions[0].textContent,font=(getComputedStyle(document.body).fontFamily||'Tahoma').replace(/"/g,"'");
-  const head='<tr><th>بارنامه</th><th>تاریخ ترخیص</th><th>پیش‌کرایه</th><th>پس‌کرایه</th><th>سهم شرکت</th><th>سهم راننده</th><th>انبارداری</th><th>سهم انباردار از انبارداری</th></tr>';
+  const head='<tr><th>بارنامه</th><th>تاریخ ترخیص</th><th>پس‌کرایه</th><th>سهم شرکت</th><th>سهم راننده</th><th>انبارداری</th><th>سهم انباردار از انبارداری</th></tr>';
   const html='<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>گزارش مالی ترخیص‌ها</title><style>body{font-family:'+font+'}'+PRINT_CSS+'</style></head><body><h1>گزارش مالی ترخیص‌ها — اتوبنز وحدت</h1><p class="meta">بازه: '+esc(per)+' | '+esc($('v23FinCount').textContent)+' | تاریخ چاپ: '+esc(shamsi(new Date()))+'</p><div class="sum">'+$('v23FinSummary').innerHTML+'</div><table><thead>'+head+'</thead><tbody>'+$('v23FinBody').innerHTML+'</tbody></table></body></html>';
   window.__v23LastReportHtml=html;
   const old=document.getElementById('v23PrintFrame');if(old)old.remove();
