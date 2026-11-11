@@ -2,7 +2,8 @@
 
 <html dir="rtl" lang="fa">
 <head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>اتوبنز وحدت | نسخه ۱</title>
+<title>اتوبنز وحدت | نسخه ۱٫۱</title>
+<script>window.v24Origin=function(){try{var c=JSON.parse(localStorage.getItem('autobenz-company-v1'));return (c&&c.origin)||'تهران'}catch(e){return 'تهران'}};window.v24Company=function(){try{return JSON.parse(localStorage.getItem('autobenz-company-v1'))||{}}catch(e){return {}}}</script>
 <style>
 :root{--navy:#12345b;--navy2:#1b456e;--accent:#1769b6;--canvas:#f2f5fa;--ink:#21344d;--muted:#6f8198;--line:#e1e8f1;--white:#fff}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--canvas)}body{font-family:Vazirmatn,'Noto Sans Arabic','Segoe UI',Tahoma,sans-serif;color:var(--ink);font-size:14px;line-height:1.7}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #82c6ff;outline-offset:2px}.app{width:100%;min-height:100vh;display:flex;flex-direction:column}
@@ -2821,7 +2822,7 @@ function blankForm(){editingId=null;syncCompactExtras({});$('#waybillForm').rese
 function newWaybill(ask=true){if(ask&&hasSomeValues()&&!confirm('فرم فعلی پاک شود و یک فرم تازه باز شود؟'))return;blankForm();const dr=safeRead(draftKey,null);if(dr&&!ask){if(confirm('یک پیش‌نویس محلی ذخیره شده است. آن را بازیابی کنیم؟'))fillForm(dr)}}
 function hasSomeValues(){return $('#senderName').value.trim()||$('#recipientName').value.trim()||$('#recipientMobile').value.trim()||$('#waybillNotes').value.trim()}
 $('#newBlankWaybill').onclick=()=>newWaybill(true);
-function gather(){const data={};fields.forEach(id=>data[id]=$('#'+id).value.trim());data.origin='تهران';['senderMobile','recipientMobile'].forEach(k=>data[k]=numeric(data[k]));['senderPhone','recipientPhone'].forEach(k=>data[k]=latin(data[k]));moneyIds.forEach(id=>data[id]=moneyVal(id));data.packages=$$('#packagesBody tr').map(tr=>({title:tr.querySelector('.package-title').value.trim(),kind:tr.querySelector('.package-kind').value.trim(),qty:Number(numeric(tr.querySelector('.package-qty').value))||0,weight:tr.querySelector('.package-weight').value.trim()}));data.totalPackages=data.packages.reduce((sum,p)=>sum+p.qty,0);data.total=data.preFare+data.postFare+data.storageFee+data.otherFee;return data}
+function gather(){const data={};fields.forEach(id=>data[id]=$('#'+id).value.trim());data.origin=v24Origin();['senderMobile','recipientMobile'].forEach(k=>data[k]=numeric(data[k]));['senderPhone','recipientPhone'].forEach(k=>data[k]=latin(data[k]));moneyIds.forEach(id=>data[id]=moneyVal(id));data.packages=$$('#packagesBody tr').map(tr=>({title:tr.querySelector('.package-title').value.trim(),kind:tr.querySelector('.package-kind').value.trim(),qty:Number(numeric(tr.querySelector('.package-qty').value))||0,weight:tr.querySelector('.package-weight').value.trim()}));data.totalPackages=data.packages.reduce((sum,p)=>sum+p.qty,0);data.total=data.preFare+data.postFare+data.storageFee+data.otherFee;return data}
 function syncCompactExtras(data){
   for(const [id,a,b] of [['senderExtra','senderPhone','senderAddress'],['recipientExtra','recipientPhone','recipientAddress']]){
     const el=$('#'+id);if(el)el.open=Boolean(data[a]||data[b]);
@@ -2872,7 +2873,7 @@ function v16EncodeBase64(bytes){
  return output;
 }
 function v16QrRecord(rec){
- return {v:16,id:String(rec.id||''),ts:String(rec.createdAt||''),o:String(rec.origin||'تهران'),d:String(rec.destination||''),
+ return {v:16,id:String(rec.id||''),ts:String(rec.createdAt||''),o:String(rec.origin||v24Origin()),d:String(rec.destination||''),
  sn:String(rec.senderName||''),sm:String(rec.senderMobile||''),sp:String(rec.senderPhone||''),sa:String(rec.senderAddress||''),
  rn:String(rec.recipientName||''),rm:String(rec.recipientMobile||''),rp:String(rec.recipientPhone||''),ra:String(rec.recipientAddress||''),
  pk:(rec.packages||[]).map(p=>[String(p.title||''),String(p.kind||''),Number(p.qty)||1,String(p.weight||'')]),
@@ -2942,10 +2943,10 @@ function v16PrintTicket(rec,role,qrHtml){
  const line=(label,value)=>`<div class="v16-cell"><span>${label}</span><strong>${v16Stamp(value)||'—'}</strong></div>`;
  const fees=[['پیش‌کرایه',rec.preFare],['پس‌کرایه',rec.postFare],['انبارداری',rec.storageFee],['سایر هزینه‌ها',rec.otherFee],['جمع کل',rec.total]].map(([title,value])=>`<div class="v16-fee"><span>${title}</span><strong>${v16FormattedMoney(value)}</strong></div>`).join('');
  return `<article class="v16-ticket" data-print-copy="${esc(role)}" dir="rtl">
-  <div class="v16-ticket-header"><div class="v16-company">${logoMarkup}<div><b>اتوبنز وحدت</b></div></div>
+  <div class="v16-ticket-header"><div class="v16-company">${logoMarkup}<div><b>${esc(v24Company().name||'اتوبنز وحدت')}</b>${(v24Company().phone||v24Company().address)?'<div style="font-size:9px;font-weight:500;line-height:1.5">'+esc([v24Company().phone,v24Company().address].filter(Boolean).join(' | '))+'</div>':''}</div></div>
   <div class="v16-header-meta"><b>${esc(role)}</b><span>شماره بارنامه: <strong>${v16Stamp(rec.id)}</strong></span><span>تاریخ: ${v16Stamp(when)}</span></div></div>
   <div class="v16-content-grid"><div class="v16-doc-main">
-   <div class="v16-route-line"><span>مبدأ: <b>${v16Stamp(rec.origin||'تهران')}</b></span><span class="v16-route-arrow">←</span><span>مقصد: <b>${v16Stamp(rec.destination)}</b></span></div>
+   <div class="v16-route-line"><span>مبدأ: <b>${v16Stamp(rec.origin||v24Origin())}</b></span><span class="v16-route-arrow">←</span><span>مقصد: <b>${v16Stamp(rec.destination)}</b></span></div>
    <div class="v16-parties"><div class="v16-party"><b>فرستنده</b>${line('نام',rec.senderName)}${line('موبایل',rec.senderMobile)}${line('تلفن',rec.senderPhone||'—')}${line('آدرس',rec.senderAddress||'—')}</div><div class="v16-party"><b>گیرنده</b>${line('نام',rec.recipientName)}${line('موبایل',rec.recipientMobile)}${line('تلفن',rec.recipientPhone||'—')}${line('آدرس',rec.recipientAddress||'—')}</div></div>
    <div class="v16-line"><span class="v16-label">مشخصات بار:</span><strong>${v16Stamp(entries)}</strong></div>
    <div class="v16-fees">${fees}</div>
@@ -3574,7 +3575,7 @@ function receiptMatchesRecord(r,p){
  const eq=(a,b)=>String(a??'')===String(b??'');
  const num=(a,b)=>Number(a||0)===Number(b||0);
  const pack=(r.packages||[]).map(x=>[String(x.title||''),String(x.kind||''),Number(x.qty)||1,String(x.weight||'')]);
- return eq(r.id,p.id)&&eq(r.createdAt,p.ts)&&eq(r.destination,p.d)&&eq(r.origin||'تهران',p.o||'تهران')
+ return eq(r.id,p.id)&&eq(r.createdAt,p.ts)&&eq(r.destination,p.d)&&eq(r.origin||v24Origin(),p.o||v24Origin())
   &&eq(r.senderName,p.sn)&&eq(r.senderMobile,p.sm)&&eq(r.senderPhone,p.sp)&&eq(r.senderAddress,p.sa)
   &&eq(r.recipientName,p.rn)&&eq(r.recipientMobile,p.rm)&&eq(r.recipientPhone,p.rp)&&eq(r.recipientAddress,p.ra)
   &&num(r.preFare,p.pf)&&num(r.postFare,p.zf)&&num(r.storageFee,p.sf)&&num(r.otherFee,p.of)&&num(r.total,p.tt)
@@ -3963,25 +3964,22 @@ window.v16DecodeQr=fromQR;
  window.v23Sha256=sha256hex;
  const normPass=p=>latin(String(p)); // Persian/Arabic digits typed on a Persian keyboard match Latin digits
  function hashPass(salt,pass){let hsh=sha256hex(salt+':'+normPass(pass));for(let i=0;i<2000;i++)hsh=sha256hex(hsh+salt);return hsh}
+ window.v23Crypto={hashPass:(s,p)=>hashPass(s,p),newSalt:()=>newSalt()};
  function newSalt(){const a=new Uint8Array(16);try{crypto.getRandomValues(a)}catch(_){for(let i=0;i<16;i++)a[i]=Math.floor(Math.random()*256)}return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')}
 
  /* ---------- users and session ---------- */
  const readUsers=()=>{const v=safeRead(usersKey,[]);return Array.isArray(v)?v.filter(u=>u&&u.id&&u.username&&u.hash):[]};
  const authRequired=()=>readUsers().length>0;
- /* V1: first run only (users key absent) -> initial admin, username = password = 09126862669 */
- (function(){let first=false;try{first=localStorage.getItem(usersKey)===null}catch(_){}
-  if(first){const salt=newSalt(),pass='09126862669';
-   safeWrite(usersKey,[{id:'u-admin-1',username:pass,salt:salt,hash:hashPass(salt,pass),admin:true,active:true,perms:{}}])}})();
  const sessionId=()=>{try{return sessionStorage.getItem(sessKey)}catch(_){return null}};
  const currentUser=()=>{const id=sessionId();return id?readUsers().find(u=>u.id===id&&u.active!==false)||null:null};
  function can(perm){if(!authRequired())return true;const u=currentUser();if(!u)return false;return !!u.admin||!!(u.perms&&u.perms[perm])}
  const isAdmin=()=>!authRequired()||!!currentUser()?.admin;
- window.v23Can=can;
+ window.v23Can=can;window.v23IsAdmin=()=>isAdmin();
 
  function ensureLogin(){
   let ov=$('v23Login');if(ov)return ov;
   ov=document.createElement('div');ov.id='v23Login';ov.hidden=true;ov.dir='rtl';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');
-  ov.innerHTML='<form class="v23-login-card" id="v23LoginForm" autocomplete="off"><h2>ورود به اتوبنز وحدت</h2><small style="color:#6385a0">نسخه ۱٫۰٫۰</small><p>نام کاربری و رمز عبور را وارد کنید.</p><label for="v23LoginUser">نام کاربری</label><input id="v23LoginUser" autocomplete="off" spellcheck="false"/><label for="v23LoginPass">رمز عبور</label><input id="v23LoginPass" type="password" autocomplete="off"/><button type="submit" id="v23LoginBtn">ورود</button><div id="v23LoginMsg" role="alert"></div></form>';
+  ov.innerHTML='<form class="v23-login-card" id="v23LoginForm" autocomplete="off"><h2>ورود به اتوبنز وحدت</h2><small style="color:#6385a0">نسخه ۱٫۱٫۰</small><p>نام کاربری و رمز عبور را وارد کنید.</p><label for="v23LoginUser">نام کاربری</label><input id="v23LoginUser" autocomplete="off" spellcheck="false"/><label for="v23LoginPass">رمز عبور</label><input id="v23LoginPass" type="password" autocomplete="off"/><button type="submit" id="v23LoginBtn">ورود</button><div id="v23LoginMsg" role="alert"></div></form>';
   document.body.appendChild(ov);
   $('v23LoginForm').addEventListener('submit',e=>{e.preventDefault();tryLogin()});
   $('v23LoginUser').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('v23LoginPass').focus()}});
@@ -4208,6 +4206,269 @@ window.v16DecodeQr=fromQR;
  /* ---------- start ---------- */
  clearUserForm();applyUi();
  if(authRequired()){if(currentUser())afterLogin();else showLogin()}
+})();
+</script>
+<style id="v24-styles">
+/* V24: settings redesign (larger type), nav active fix, setup wizard, backup page, signature */
+@media (min-width:1000px){
+#settingsPanel#settingsPanel#settingsPanel .sm-header{min-height:84px!important;padding:16px 28px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-header h3{font-size:25px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-header p{font-size:14.5px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-header-icon{width:50px!important;height:50px!important;font-size:26px!important;border-radius:14px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-toolbar{min-height:66px!important;padding:10px 28px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-toolbar-tip{display:flex!important;font-size:13.5px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-search-wrap input{font-size:15.5px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-workspace{display:flex!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-sidebar{width:272px!important;flex:0 0 272px!important;padding:18px 12px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-nav{display:flex!important;flex-direction:column!important;gap:6px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-nav-caption{font-size:13px!important;margin:6px 12px 10px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-nav button{min-height:58px!important;font-size:15.5px!important;padding:8px 12px!important;border-radius:13px!important;gap:12px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-nav small{font-size:12px!important;line-height:1.5!important;font-weight:600!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-nav em{font-size:15px!important;min-width:30px!important;padding:3px 8px!important;font-style:normal;font-weight:900}
+#settingsPanel#settingsPanel#settingsPanel .sm-ico{width:42px!important;min-width:42px!important;height:42px!important;font-size:20px!important;border-radius:12px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-card{padding:22px 26px!important;margin-bottom:18px!important;border-radius:16px!important;box-shadow:0 3px 14px #1b3a5a14!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-card-head{margin-bottom:16px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-card-head h5{font-size:20px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-card-head p{font-size:14px!important;line-height:1.95!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-count{font-size:14.5px!important;padding:6px 13px!important}
+#settingsPanel#settingsPanel#settingsPanel input:not([type=checkbox]):not([type=radio]),#settingsPanel#settingsPanel#settingsPanel select,#settingsPanel#settingsPanel#settingsPanel textarea{font-size:15.5px!important;min-height:46px!important}
+#settingsPanel#settingsPanel#settingsPanel label{font-size:14.5px}
+#settingsPanel#settingsPanel#settingsPanel button{font-size:14.5px}
+#settingsPanel#settingsPanel#settingsPanel .sm-switch-row strong{font-size:15.5px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-switch-row small{font-size:13px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-eyebrow{font-size:13.5px!important}
+#settingsPanel#settingsPanel#settingsPanel #smSectionTitle{font-size:28px!important;margin:4px 0 6px!important}
+#settingsPanel#settingsPanel#settingsPanel #smSectionDesc{font-size:15px!important;line-height:1.9!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-status-tag{font-size:13.5px!important;padding:6px 12px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-overview-card{padding:20px 22px!important;min-height:150px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-overview-card strong{font-size:17px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-overview-card b{font-size:26px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-overview-card small{font-size:13.5px!important;line-height:1.7!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-overview-symbol{font-size:20px!important;width:40px!important;height:40px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-notice,#settingsPanel#settingsPanel#settingsPanel .sm-preview-box{font-size:15px!important;padding:16px 20px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-notice strong,#settingsPanel#settingsPanel#settingsPanel .sm-preview-box strong{font-size:17px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-notice p,#settingsPanel#settingsPanel#settingsPanel .sm-preview-box div{font-size:14.5px!important;line-height:2!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-side-foot{font-size:13px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-inline-form label,#settingsPanel#settingsPanel#settingsPanel .sm-list-tools label{font-size:14.5px!important}
+#settingsPanel#settingsPanel#settingsPanel .sm-add-btn{font-size:15px!important;min-height:46px!important}
+}
+.nav-btn kbd{font-size:12px!important}
+.v24-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+.v24-grid .full{grid-column:1/-1}
+.v24-f label{display:block;font-weight:800;color:#183b5f;margin-bottom:6px}
+.v24-f input,.v24-f select,.v24-f textarea{width:100%;border:1px solid #c5d4e3;border-radius:11px;padding:10px 13px;font:inherit;color:#163e62;background:#fff;box-sizing:border-box}
+.v24-f input:focus,.v24-f select:focus,.v24-f textarea:focus{outline:0;border-color:#327db5;box-shadow:0 0 0 3px #ddeefa}
+.v24-f small{display:block;color:#6385a0;margin-top:4px;font-size:12.5px}
+.v24-btn{border:0;border-radius:11px;padding:11px 20px;font:inherit;font-weight:900;cursor:pointer;background:#123658;color:#fff}
+.v24-btn.alt{background:#eef5ff;color:#123658;border:1px solid #c5d4e3}
+.v24-btn.warn{background:#fff4dc;color:#7a4b00;border:1px solid #f0c36a}
+.v24-btn:disabled{opacity:.55;cursor:default}
+.v24-msg{margin-top:12px;font-weight:800}.v24-msg.ok{color:#17703a}.v24-msg.err{color:#b3261e}
+.v24-warn{background:#fff4dc;border:1px solid #f0c36a;color:#6b4500;border-radius:12px;padding:12px 15px;margin-bottom:14px;line-height:1.9}
+.v24-info{background:#eef5ff;border:1px solid #cfe0f2;color:#1f4a73;border-radius:12px;padding:12px 15px;margin-bottom:14px;line-height:1.9}
+.v24-rows{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.v24-row{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f7faff;border:1px solid #dbe6f2;border-radius:11px;padding:10px 14px}
+.v24-row b{font-size:15px}.v24-row small{color:#6385a0}
+.v24-sign{color:#5d7b96;font-size:12.5px;line-height:1.9;text-align:center}
+.v24-sign b{color:#123658}
+#v24Footer{padding:14px 10px 22px;border-top:1px solid #e1e8f2;margin-top:24px;background:#fff}
+#v24Setup{position:fixed;inset:0;z-index:100000;background:linear-gradient(135deg,#0d2b4a,#1d4c77);overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:28px 14px;direction:rtl}
+#v24Setup[hidden]{display:none}
+.v24-setup-card{background:#fff;border-radius:20px;max-width:760px;width:100%;padding:28px 32px;box-shadow:0 20px 60px #0008}
+.v24-setup-card h2{margin:0 0 4px;font-size:26px;color:#123658}
+.v24-setup-card .sub{color:#5d7b96;margin:0 0 18px;line-height:1.9}
+.v24-setup-card h3{margin:22px 0 10px;font-size:18px;color:#123658;border-bottom:2px solid #f2ad2d;padding-bottom:6px;display:inline-block}
+.v24-setup-logo{width:74px;height:74px;object-fit:contain;float:left;margin-right:12px}
+#v23Login .v23-login-card .v24-sign{margin-top:14px}
+@media(max-width:720px){.v24-grid{grid-template-columns:1fr}}
+</style>
+<script id="v24-main">
+/* V24: company info + first-run setup, programmer signature, backup page, nav-active fix. */
+(function(){
+ const $=id=>document.getElementById(id);
+ const CK='autobenz-company-v1',usersKey='autobenz-preview-users-v23',sessKey='autobenz-session-v23',destKey='autobenz-preview-destinations-v2',pairKey='autobenz-preview-route-pairs-v20';
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const rdJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??f}catch(_){return f}};
+ const company=()=>{const c=rdJson(CK,null);return c&&typeof c==='object'?c:null};
+ const SIGN='<div class="v24-sign">طراحی و برنامه‌نویسی: <b>سعید فداییان</b> · برنامه‌نویس · <span dir="ltr">www.saeidpix.ir</span> · <span dir="ltr">09126862669</span></div>';
+ const fmtDate=ts=>{try{return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ts))}catch(_){return String(ts)}};
+ const fmtSize=b=>b>=1048576?(b/1048576).toFixed(1)+' مگابایت':Math.max(1,Math.round(b/1024))+' کیلوبایت';
+
+ /* ---- nav: only the open section is yellow ---- */
+ if(typeof navigate==='function'){
+  const prev=navigate;
+  navigate=function(section){
+   const r=prev.apply(this,arguments);
+   if(section==='دریافت در مقصد'&&document.body.classList.contains('v16-destination-mode'))
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('is-active',b.dataset.section===section));
+   return r;
+  };
+ }
+
+ /* ---- brand / origin texts ---- */
+ function applyCompany(){
+  const c=company(),origin=(c&&c.origin)||'تهران';
+  const a=$('originRouteValue');if(a)a.textContent=origin;
+  const t=document.querySelector('.wb-origin-tag');if(t)t.textContent='مبدأ: '+origin;
+  if(c&&c.name){
+   const walk=document.createTreeWalker(document.querySelector('.brand')||document.body,NodeFilter.SHOW_TEXT);let n;
+   while((n=walk.nextNode())){if(n.nodeValue.trim()==='سیستم مدیریت بارنامه و تحویل بار'){n.nodeValue=c.name;break}}
+  }
+ }
+
+ /* ---- footer signature ---- */
+ (function(){const f=document.createElement('footer');f.id='v24Footer';f.innerHTML=SIGN;const shell=document.querySelector('.shell');(shell&&shell.parentNode?shell.parentNode:document.body).insertBefore(f,shell?shell.nextSibling:null)})();
+ (function(){const card=document.querySelector('#v23Login .v23-login-card');if(card)card.insertAdjacentHTML('beforeend',SIGN);
+  new MutationObserver(()=>{const c=document.querySelector('#v23Login .v23-login-card');if(c&&!c.querySelector('.v24-sign'))c.insertAdjacentHTML('beforeend',SIGN)}).observe(document.body,{childList:true})})();
+
+ /* ---- first-run setup wizard ---- */
+ const hasUsers=()=>{const u=rdJson(usersKey,[]);return Array.isArray(u)&&u.length>0};
+ function showSetup(){
+  const ov=document.createElement('div');ov.id='v24Setup';
+  ov.innerHTML=`<form class="v24-setup-card" id="v24SetupForm" autocomplete="off">
+   <img class="v24-setup-logo" alt="" src="${esc(document.querySelector('.brand img')?.getAttribute('src')||'')}">
+   <h2>راه‌اندازی اولیه اتوبنز وحدت</h2>
+   <p class="sub">اطلاعات زیر فقط یک بار پرسیده می‌شود و بعداً از «تنظیمات» قابل تغییر است.</p>
+   <h3>۱. اطلاعات شرکت</h3>
+   <div class="v24-grid">
+    <div class="v24-f full"><label for="v24Name">نام شرکت *</label><input id="v24Name" maxlength="80"></div>
+    <div class="v24-f"><label for="v24Phone">شماره تماس *</label><input id="v24Phone" dir="ltr" maxlength="40"></div>
+    <div class="v24-f"><label for="v24Origin">شهر مبدأ *</label><input id="v24Origin" maxlength="40" placeholder="مثلاً تهران"></div>
+    <div class="v24-f full"><label for="v24Addr">آدرس *</label><textarea id="v24Addr" rows="2" maxlength="240"></textarea></div>
+   </div>
+   <h3>۲. مقصد</h3>
+   <div class="v24-grid"><div class="v24-f full"><label for="v24Dest">یک مقصد (اختیاری)</label><input id="v24Dest" maxlength="40" placeholder="مثلاً رشت"><small>می‌توانید خالی بگذارید و بعداً از تنظیمات › مسیرها و مقصدها اضافه کنید.</small></div></div>
+   <h3>۳. ورود مدیر</h3>
+   <div class="v24-grid">
+    <div class="v24-f"><label for="v24User">نام کاربری مدیر *</label><input id="v24User" dir="ltr" maxlength="40" value="09126862669"></div>
+    <div class="v24-f"><label for="v24Pass">رمز عبور *</label><input id="v24Pass" dir="ltr" maxlength="100" value="09126862669"><small>پیش‌فرض همان شماره است؛ بعد از ورود از تنظیمات › کاربران عوضش کنید.</small></div>
+   </div>
+   <div class="v24-msg err" id="v24SetupMsg" role="alert"></div>
+   <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><button class="v24-btn" type="submit">ذخیره و ورود به برنامه</button>${SIGN}</div>
+  </form>`;
+  document.body.appendChild(ov);
+  const f=$('v24SetupForm');
+  setTimeout(()=>$('v24Name').focus(),50);
+  f.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault();const els=[...f.querySelectorAll('input,textarea')];const i=els.indexOf(e.target);if(i<els.length-1)els[i+1].focus();else f.requestSubmit()}});
+  f.addEventListener('submit',e=>{
+   e.preventDefault();
+   const v=id=>$(id).value.trim(),m=$('v24SetupMsg');
+   const name=v('v24Name'),phone=v('v24Phone'),addr=v('v24Addr'),origin=v('v24Origin'),dest=v('v24Dest'),user=v('v24User'),pass=$('v24Pass').value;
+   if(!name)return m.textContent='نام شرکت را وارد کنید.';
+   if(!phone)return m.textContent='شماره تماس را وارد کنید.';
+   if(!origin)return m.textContent='شهر مبدأ را وارد کنید.';
+   if(!addr)return m.textContent='آدرس را وارد کنید.';
+   if(dest&&dest===origin)return m.textContent='مقصد نباید با مبدأ یکی باشد.';
+   if(!user)return m.textContent='نام کاربری مدیر را وارد کنید.';
+   if(!pass)return m.textContent='رمز عبور را وارد کنید.';
+   if(!window.v23Crypto)return m.textContent='خطا در ماژول ورود؛ برنامه را دوباره باز کنید.';
+   try{
+    const salt=window.v23Crypto.newSalt(),id='u-'+Date.now().toString(36);
+    localStorage.setItem(usersKey,JSON.stringify([{id,username:user,salt,hash:window.v23Crypto.hashPass(salt,pass),admin:true,active:true,perms:{}}]));
+    if(dest){localStorage.setItem(destKey,JSON.stringify([dest]));localStorage.setItem(pairKey,JSON.stringify([{a:origin,b:dest,enabled:true}]))}
+    localStorage.setItem(CK,JSON.stringify({name,phone,address:addr,origin,setupDone:true,savedAt:new Date().toISOString()}));
+    try{sessionStorage.setItem(sessKey,id)}catch(_){}
+    location.reload();
+   }catch(err){m.textContent='ذخیره انجام نشد: '+(err&&err.message||err)}
+  });
+ }
+
+ /* ---- settings: company page + backup page ---- */
+ const panel=$('settingsPanel');
+ function openTab(id,title,desc){
+  panel.querySelectorAll('[data-sm-tab]').forEach(b=>{const s=b.dataset.smTab===id;b.setAttribute('aria-selected',String(s));b.tabIndex=s?0:-1});
+  panel.querySelectorAll('[data-sm-page]').forEach(p=>p.hidden=p.dataset.smPage!==id);
+  const nr=$('smNoResults');if(nr)nr.hidden=true;
+  const set=(i,t)=>{const e=$(i);if(e)e.textContent=t};set('smBreadCrumb',title);set('smSectionTitle',title);set('smSectionDesc',desc);
+ }
+ const adminOnly=()=>typeof window.v23IsAdmin==='function'?window.v23IsAdmin():true;
+ function addTab(id,icon,title,sub,before){
+  const nav=panel.querySelector('.sm-nav');if(!nav)return;
+  const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.dataset.smTab=id;
+  b.innerHTML=`<span class="sm-ico" aria-hidden="true">${icon}</span><span>${title}<small>${sub}</small></span>`;
+  const ref=before?nav.querySelector(`[data-sm-tab="${before}"]`):null;nav.insertBefore(b,ref);return b;
+ }
+ const pageHost=()=>{const p=panel.querySelector('[data-sm-page="users"]');return p?p.parentNode:null};
+
+ function buildCompany(){
+  const host=pageHost();if(!host)return;
+  const pg=document.createElement('section');pg.className='sm-page';pg.dataset.smPage='company';pg.hidden=true;
+  pg.innerHTML=`<div class="sm-card"><div class="sm-card-head"><div><h5>اطلاعات شرکت</h5><p>نام و تماس روی بارنامه‌ی چاپی و بالای برنامه نمایش داده می‌شود. شهر مبدأ برای بارنامه‌های جدید استفاده می‌شود؛ بارنامه‌های ثبت‌شده قبلی تغییر نمی‌کنند.</p></div></div>
+   <div class="v24-grid">
+    <div class="v24-f full"><label for="v24sName">نام شرکت</label><input id="v24sName" maxlength="80"></div>
+    <div class="v24-f"><label for="v24sPhone">شماره تماس</label><input id="v24sPhone" dir="ltr" maxlength="40"></div>
+    <div class="v24-f"><label for="v24sOrigin">شهر مبدأ</label><input id="v24sOrigin" maxlength="40"></div>
+    <div class="v24-f full"><label for="v24sAddr">آدرس</label><textarea id="v24sAddr" rows="2" maxlength="240"></textarea></div>
+   </div>
+   <div style="margin-top:16px"><button class="v24-btn" type="button" id="v24sSave">ذخیره اطلاعات شرکت</button></div><div class="v24-msg" id="v24sMsg"></div></div>
+   <div class="sm-card"><div class="sm-card-head"><div><h5>درباره برنامه</h5><p>اتوبنز وحدت — نسخه ۱٫۱٫۰</p></div></div>${SIGN}</div>`;
+  host.appendChild(pg);
+  const fill=()=>{const c=company()||{};$('v24sName').value=c.name||'';$('v24sPhone').value=c.phone||'';$('v24sOrigin').value=c.origin||'';$('v24sAddr').value=c.address||''};
+  $('v24sSave').onclick=()=>{
+   const name=$('v24sName').value.trim(),origin=$('v24sOrigin').value.trim(),m=$('v24sMsg');
+   if(!name||!origin){m.className='v24-msg err';m.textContent='نام شرکت و شهر مبدأ الزامی است.';return}
+   const old=company()||{};
+   localStorage.setItem(CK,JSON.stringify({...old,name,phone:$('v24sPhone').value.trim(),address:$('v24sAddr').value.trim(),origin,setupDone:true,savedAt:new Date().toISOString()}));
+   applyCompany();m.className='v24-msg ok';m.textContent='ذخیره شد.';
+  };
+  const b=addTab('company','🏢','اطلاعات شرکت','نام، تماس، آدرس، مبدأ','routes');
+  b.addEventListener('click',()=>{if(!adminOnly()){window.v23Alert&&window.v23Alert('دسترسی ندارید','فقط مدیر می‌تواند اطلاعات شرکت را تغییر دهد.');return}fill();$('v24sMsg').textContent='';openTab('company','اطلاعات شرکت','نام، تماس، آدرس و شهر مبدأ')});
+ }
+
+ function buildBackup(){
+  const host=pageHost();if(!host)return;
+  const pg=document.createElement('section');pg.className='sm-page';pg.dataset.smPage='backup';pg.hidden=true;
+  pg.innerHTML=`<div class="sm-card"><div class="sm-card-head"><div><h5>بکاپ خودکار</h5><p>برنامه در پس‌زمینه و بدون هیچ پنجره‌ای از اطلاعات نسخه‌ی پشتیبان می‌گیرد. بکاپ‌های ۴۸ ساعت اخیر همه نگه داشته می‌شوند و بعد از آن روزی یکی تا ۳۰ روز.</p></div></div><div id="v24bBody"></div></div>`;
+  host.appendChild(pg);
+  const b=addTab('backup','🛟','بکاپ و بازگردانی','نسخه پشتیبان خودکار و دستی');
+  b.addEventListener('click',()=>{if(!adminOnly()){window.v23Alert&&window.v23Alert('دسترسی ندارید','فقط مدیر به بکاپ دسترسی دارد.');return}openTab('backup','بکاپ و بازگردانی','نسخه پشتیبان خودکار، دستی و بازگردانی');render()});
+  const api=window.autobenzDesktop;
+  async function render(msg,err){
+   const body=$('v24bBody');
+   if(!api){body.innerHTML='<div class="v24-info">بکاپ خودکار فقط در نسخه‌ی نصبی ویندوز فعال است. در این حالت داده‌ها در مرورگر ذخیره می‌شوند.</div>';return}
+   const st=await api.backupState(),s=st.settings;
+   const last=s.lastOk?fmtDate(s.lastOk):'هنوز بکاپی گرفته نشده';
+   body.innerHTML=`${st.sameDrive?'<div class="v24-warn"><b>هشدار:</b> پوشه‌ی بکاپ روی همان درایوی است که دیتابیس در آن قرار دارد. برای امنیت واقعی یک پوشه روی <b>درایو دیگر</b> (یا فلش/هارد خارجی) انتخاب کنید.</div>':''}
+    ${s.lastError?'<div class="v24-warn">آخرین بکاپ ناموفق بود: '+esc(s.lastError)+'</div>':''}
+    <div class="v24-grid">
+     <div class="v24-f full"><label>پوشه‌ی بکاپ</label><div style="display:flex;gap:10px;align-items:center"><input readonly dir="ltr" value="${esc(s.dir)}"><button class="v24-btn alt" type="button" id="v24bChoose" style="white-space:nowrap">انتخاب پوشه…</button></div><small>پوشه به‌صورت مخفی (Hidden) ساخته می‌شود.</small></div>
+     <div class="v24-f"><label for="v24bInt">فاصله‌ی بکاپ</label><select id="v24bInt">${[[15,'هر ۱۵ دقیقه'],[30,'هر ۳۰ دقیقه'],[60,'هر ساعت'],[120,'هر ۲ ساعت'],[240,'هر ۴ ساعت'],[720,'هر ۱۲ ساعت'],[1440,'روزی یک بار']].map(([v,t])=>`<option value="${v}" ${v===s.intervalMinutes?'selected':''}>${t}</option>`).join('')}</select></div>
+     <div class="v24-f"><label for="v24bOn">بکاپ خودکار</label><select id="v24bOn"><option value="1" ${s.enabled?'selected':''}>روشن</option><option value="0" ${s.enabled?'':'selected'}>خاموش</option></select></div>
+    </div>
+    <div class="v24-info" style="margin-top:14px">آخرین بکاپ موفق: <b>${esc(last)}</b><br>محل دیتابیس: <span dir="ltr">${esc(st.dbPath)}</span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="v24-btn" type="button" id="v24bRun">بکاپ همین حالا</button></div>
+    <div class="v24-msg ${err?'err':'ok'}" id="v24bMsg">${esc(msg||'')}</div>
+    <h5 style="margin:22px 0 4px;font-size:18px">بکاپ‌های موجود (${st.list.length})</h5>
+    <div class="v24-rows">${st.list.length?st.list.map(x=>`<div class="v24-row"><span><b>${esc(fmtDate(x.time))}</b> ${x.tag?'<small>('+esc({manual:'دستی','pre-restore':'قبل از بازگردانی'}[x.tag]||x.tag)+')</small>':''}<br><small>${esc(fmtSize(x.size))}</small></span><button class="v24-btn warn" type="button" data-restore="${esc(x.file)}">بازگردانی</button></div>`).join(''):'<small>هنوز بکاپی وجود ندارد.</small>'}</div>`;
+   const msgEl=$('v24bMsg');
+   $('v24bChoose').onclick=async()=>{const d=await api.backupChoose();if(d){await api.backupSet({dir:d});render('پوشه‌ی بکاپ تغییر کرد.')}};
+   $('v24bInt').onchange=async e=>{await api.backupSet({intervalMinutes:+e.target.value});render('ذخیره شد.')};
+   $('v24bOn').onchange=async e=>{await api.backupSet({enabled:e.target.value==='1'});render('ذخیره شد.')};
+   $('v24bRun').onclick=async()=>{$('v24bRun').disabled=true;msgEl.className='v24-msg';msgEl.textContent='در حال بکاپ‌گیری…';const r=await api.backupRun();render(r.result.ok?'بکاپ با موفقیت ساخته شد ('+r.result.waybills+' بارنامه).':'بکاپ ناموفق: '+r.result.error,!r.result.ok)};
+   body.querySelectorAll('[data-restore]').forEach(btn=>btn.onclick=async()=>{
+    if(!confirm('بازگردانی این بکاپ، اطلاعات فعلی برنامه را با اطلاعات آن زمان جایگزین می‌کند (قبل از آن یک بکاپ ایمنی از وضعیت فعلی گرفته می‌شود) و برنامه دوباره باز می‌شود. ادامه می‌دهید؟'))return;
+    msgEl.className='v24-msg';msgEl.textContent='در حال بازگردانی…';
+    const r=await api.backupRestore(btn.dataset.restore);if(!r.ok){msgEl.className='v24-msg err';msgEl.textContent=r.error||'بازگردانی انجام نشد.'}
+   });
+  }
+ }
+
+ function tweakSettingsLabels(){
+  const p=panel.querySelector('.sm-preview-label');if(p)p.textContent='نسخه ۱٫۱';
+  const t=panel.querySelector('.sm-toolbar-tip');
+  if(t&&t.lastChild)t.lastChild.nodeValue=window.autobenzDesktop?' ذخیره در پایگاه‌داده‌ی همین رایانه':' ذخیره در همین مرورگر';
+  const f=panel.querySelector('.sm-side-foot');if(f){f.innerHTML='<span class="sm-status-circle"></span> اتوبنز وحدت · نسخه ۱٫۱٫۰ <small>طراحی: سعید فداییان</small>'}
+  const box=panel.querySelector('.sm-preview-box');
+  if(box){
+   const d=window.autobenzDesktop;
+   box.innerHTML='<strong>وضعیت سیستم</strong><div><span>محل ذخیره اطلاعات</span><b>'+(d?'پایگاه‌داده‌ی SQLite روی همین رایانه':'حافظه‌ی همین مرورگر')+'</b></div><div><span>بکاپ خودکار</span><b id="v24OvBackup">'+(d?'در حال بررسی…':'فقط در نسخه‌ی ویندوز')+'</b></div>';
+   if(d)d.backupState().then(st=>{const e=document.getElementById('v24OvBackup');if(e)e.textContent=st.settings.enabled?'روشن — هر '+st.settings.intervalMinutes+' دقیقه':'خاموش'}).catch(()=>{});
+  }
+ }
+
+ if(panel){buildCompany();buildBackup();tweakSettingsLabels()}
+ applyCompany();
+ if(!company()&&!hasUsers())showSetup();
 })();
 </script>
 </body></html>

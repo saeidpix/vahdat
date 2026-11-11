@@ -13,6 +13,19 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 18 }
       - run: npm install --no-audit --no-fund
-      - run: npx electron-builder --win nsis --x64 --publish never
+      - name: Build installer
+        run: npx electron-builder --win nsis --x64 --publish never
+      - name: Smoke test packaged app (SQLite + backup under Electron)
+        shell: pwsh
+        run: |
+          $env:SMOKE_OUT = "$PWD\smoke.json"
+          $p = Start-Process -FilePath "dist\win-unpacked\Autobenz Vahdat.exe" -ArgumentList "--smoke" -PassThru -Wait
+          if (-not (Test-Path smoke.json)) { Write-Error "smoke test produced no result"; exit 1 }
+          Get-Content smoke.json
+          $r = Get-Content smoke.json | ConvertFrom-Json
+          if (-not $r.ok) { Write-Error "smoke test failed"; exit 1 }
       - uses: actions/upload-artifact@v4
-        with: { name: setup, path: dist/Autobenz-Vahdat-Setup-1.0.0.exe }
+        with: { name: setup, path: dist/Autobenz-Vahdat-Setup-*.exe }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: smoke-result, path: smoke.json }
