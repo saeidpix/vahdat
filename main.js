@@ -15,6 +15,8 @@ const backup = require('./backup');
 const SMOKE = process.argv.includes('--smoke');
 // Forms and tables need no GPU; software rendering avoids crashes with old or missing graphics drivers (Windows 7, 32-bit machines).
 app.disableHardwareAcceleration();
+// 32-bit build: keep graphics inside the main process. On machines without a usable graphics driver the separate GPU process of the 32-bit build fails to start and takes the whole program down.
+if (process.arch === 'ia32') app.commandLine.appendSwitch('in-process-gpu');
 if (SMOKE) app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'avsmoke-')));
 
 let store, win, backupBusy = false;
