@@ -13,19 +13,22 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 18 }
       - run: npm install --no-audit --no-fund
-      - name: Build installer
-        run: npx electron-builder --win nsis --x64 --publish never
-      - name: Smoke test packaged app (SQLite + backup under Electron)
+      - name: Build installer (64-bit + 32-bit in one setup file)
+        run: npx electron-builder --win nsis --x64 --ia32 --publish never
+      - name: Smoke test packaged app, 64-bit and 32-bit (SQLite + backup under Electron)
         shell: pwsh
         run: |
-          $env:SMOKE_OUT = "$PWD\smoke.json"
-          $p = Start-Process -FilePath "dist\win-unpacked\Autobenz Vahdat.exe" -ArgumentList "--smoke" -PassThru -Wait
-          if (-not (Test-Path smoke.json)) { Write-Error "smoke test produced no result"; exit 1 }
-          Get-Content smoke.json
-          $r = Get-Content smoke.json | ConvertFrom-Json
-          if (-not $r.ok) { Write-Error "smoke test failed"; exit 1 }
+          foreach ($d in @("win-unpacked","win-ia32-unpacked")) {
+            $out = "$PWD\smoke-$d.json"
+            $env:SMOKE_OUT = $out
+            $p = Start-Process -FilePath "dist\$d\Barnameh.exe" -ArgumentList "--smoke" -PassThru -Wait
+            if (-not (Test-Path $out)) { Write-Error "smoke test produced no result ($d)"; exit 1 }
+            Get-Content $out
+            $r = Get-Content $out | ConvertFrom-Json
+            if (-not $r.ok) { Write-Error "smoke test failed ($d)"; exit 1 }
+          }
       - uses: actions/upload-artifact@v4
-        with: { name: setup, path: dist/Autobenz-Vahdat-Setup-*.exe }
+        with: { name: setup, path: dist/Barnameh-Setup-*.exe }
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: smoke-result, path: smoke.json }
+        with: { name: smoke-result, path: smoke-*.json }

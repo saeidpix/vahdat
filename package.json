@@ -1,8 +1,8 @@
 {
-  "name": "autobenz-vahdat",
-  "productName": "Autobenz Vahdat",
+  "name": "barnameh",
+  "productName": "Barnameh",
   "version": "1.0.0",
-  "description": "Autobenz Vahdat waybill software",
+  "description": "Waybill management software",
   "author": "Saeed Fadaeian",
   "main": "main.js",
   "scripts": {
@@ -13,8 +13,8 @@
     "electron-builder": "24.13.3"
   },
   "build": {
-    "appId": "ir.autobenz.vahdat",
-    "productName": "Autobenz Vahdat",
+    "appId": "ir.saeidpix.barnameh",
+    "productName": "Barnameh",
     "files": [
       "main.js",
       "preload.js",
@@ -27,7 +27,15 @@
       "output": "dist"
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
       "icon": "build/icon.png"
     },
     "nsis": {
@@ -37,8 +45,8 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "\u0627\u062a\u0648\u0628\u0646\u0632 \u0648\u062d\u062f\u062a",
-      "artifactName": "Autobenz-Vahdat-Setup-${version}.exe",
+      "shortcutName": "سامانه بارنامه",
+      "artifactName": "Barnameh-Setup-${version}.exe",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "language": "1065"

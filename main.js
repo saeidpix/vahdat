@@ -68,7 +68,7 @@ function autoBackupDir() {
     cp.execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', cmd], { timeout: 15000, windowsHide: true }, (err, out) => {
       if (err) return resolve(null);
       for (const d of pickBackupDrive(parseDrives(out), path.parse(app.getPath('userData')).root)) {
-        const dir = d.id + '\\AutobenzVahdatBackup';
+        const dir = d.id + '\\BarnamehBackup';
         try {
           fs.mkdirSync(dir, { recursive: true });
           const probe = path.join(dir, '.write-test'); fs.writeFileSync(probe, '1'); fs.unlinkSync(probe);
@@ -96,8 +96,8 @@ function registerIpc() {
   ipcMain.on('kv:set', (e, k, v) => { try { store.set(k, v); if (k === SEQ_KEY) guardSeq(v); } catch (err) { fail(e, err); } });
   ipcMain.on('kv:remove', (e, k) => { try { store.remove(k); } catch (err) { fail(e, err); } });
   // native, synchronous confirm/alert: avoids the Electron/Windows problem where inputs stop accepting focus after window.confirm()
-  ipcMain.on('dlg:confirm', (e, msg) => { e.returnValue = dialog.showMessageBoxSync(win, { type: 'question', buttons: ['بله', 'خیر'], defaultId: 0, cancelId: 1, noLink: true, title: 'اتوبنز وحدت', message: String(msg || '') }) === 0; });
-  ipcMain.on('dlg:alert', (e, msg) => { dialog.showMessageBoxSync(win, { type: 'info', buttons: ['متوجه شدم'], noLink: true, title: 'اتوبنز وحدت', message: String(msg || '') }); e.returnValue = true; });
+  ipcMain.on('dlg:confirm', (e, msg) => { e.returnValue = dialog.showMessageBoxSync(win, { type: 'question', buttons: ['بله', 'خیر'], defaultId: 0, cancelId: 1, noLink: true, title: 'سامانه بارنامه', message: String(msg || '') }) === 0; });
+  ipcMain.on('dlg:alert', (e, msg) => { dialog.showMessageBoxSync(win, { type: 'info', buttons: ['متوجه شدم'], noLink: true, title: 'سامانه بارنامه', message: String(msg || '') }); e.returnValue = true; });
   ipcMain.handle('backup:state', () => backupState());
   ipcMain.handle('backup:set', (_e, patch) => {
     const s = readSettings();
@@ -135,7 +135,7 @@ function registerIpc() {
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1366, height: 820, show: false, title: 'اتوبنز وحدت', autoHideMenuBar: true,
+    width: 1366, height: 820, show: false, title: 'سامانه بارنامه', autoHideMenuBar: true,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: false, nodeIntegration: false, sandbox: false, spellcheck: false }
   });
@@ -148,7 +148,7 @@ function createWindow() {
 }
 
 async function smoke() {
-  const out = { electron: process.versions.electron, node: process.versions.node };
+  const out = { electron: process.versions.electron, node: process.versions.node, arch: process.arch };
   try { const d = pickBackupDrive(parseDrives('C:=3=5000000000\r\nD:=3=900000000000\r\nE:=5=0\r\nF:=2=8000000000\r\n'), 'C:\\'); out.drivePick = d.map(x => x.id).join(','); } catch (e) { out.drivePick = 'ERR ' + e; }
   if (process.platform === 'win32') { try { out.autoDir = await Promise.race([new Promise(r => require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "Get-WmiObject Win32_LogicalDisk | ForEach-Object { $_.DeviceID + '=' + $_.DriveType + '=' + $_.FreeSpace }"], { timeout: 15000, windowsHide: true }, (e, o) => r(e ? 'ERR ' + e.message : JSON.stringify(parseDrives(o))))), new Promise(r => setTimeout(() => r('timeout'), 20000))]); } catch (e) { out.autoDir = 'ERR ' + e; } }
   try {
