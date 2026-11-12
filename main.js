@@ -1,8 +1,10 @@
 'use strict';
 const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const path = require('path'), fs = require('fs'), os = require('os');
+const __mark = s => { if (process.argv.includes('--smoke') && process.env.SMOKE_OUT) { try { require('fs').writeFileSync(process.env.SMOKE_OUT + '.stage', s); } catch (_) {} } };
+__mark('start');
 let Database;
-try { Database = require('better-sqlite3'); }
+try { Database = require('better-sqlite3'); __mark('required'); }
 catch (e) {
   if (process.argv.includes('--smoke') && process.env.SMOKE_OUT) { try { require('fs').writeFileSync(process.env.SMOKE_OUT, JSON.stringify({ ok: false, arch: process.arch, error: 'sqlite module: ' + String(e && e.message || e) })); } catch (_) {} process.exit(1); }
   require('electron').dialog.showErrorBox('سامانه بارنامه', 'بخش ذخیره‌سازی برنامه بارگذاری نشد. برنامه را دوباره نصب کنید.\n\n' + String(e && e.message || e)); process.exit(1);
@@ -153,16 +155,20 @@ function createWindow() {
 }
 
 async function smoke() {
+  __mark('smoke-begin');
   const out = { electron: process.versions.electron, node: process.versions.node, arch: process.arch };
   try { const d = pickBackupDrive(parseDrives('C:=3=5000000000\r\nD:=3=900000000000\r\nE:=5=0\r\nF:=2=8000000000\r\n'), 'C:\\'); out.drivePick = d.map(x => x.id).join(','); } catch (e) { out.drivePick = 'ERR ' + e; }
   if (process.platform === 'win32') { try { out.autoDir = await Promise.race([new Promise(r => require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "Get-WmiObject Win32_LogicalDisk | ForEach-Object { $_.DeviceID + '=' + $_.DriveType + '=' + $_.FreeSpace }"], { timeout: 15000, windowsHide: true }, (e, o) => r(e ? 'ERR ' + e.message : JSON.stringify(parseDrives(o))))), new Promise(r => setTimeout(() => r('timeout'), 20000))]); } catch (e) { out.autoDir = 'ERR ' + e; } }
   try {
     const arr = []; for (let i = 1; i <= 2000; i++) arr.unshift({ id: String(i), status: 'صادرشده', n: 'گیرنده ' + i });
+    __mark('store-open');
     store.set('k', 'v'); store.set('autobenz-preview-waybills-v2', JSON.stringify(arr));
     arr.unshift({ id: '2001', status: 'x' }); store.set('autobenz-preview-waybills-v2', JSON.stringify(arr));
     const all = store.getAll(); const w = JSON.parse(all['autobenz-preview-waybills-v2']);
     out.rows = w.length; out.firstId = w[0].id; out.kv = all.k;
+    __mark('before-backup');
     const b = await runBackup('smoke'); out.backup = b;
+    __mark('after-backup');
     const tmp = await backup.unpackForRestore(b.file, path.join(app.getPath('userData'), 'r.db'), Database);
     const s2 = new Store(tmp, Database); out.restoredRows = JSON.parse(s2.getAll()['autobenz-preview-waybills-v2']).length; s2.close();
     out.ok = out.drivePick === 'D:' && out.rows === 2001 && out.firstId === '2001' && out.kv === 'v' && b.ok && out.restoredRows === 2001;
