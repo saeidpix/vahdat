@@ -49,6 +49,39 @@ function schedule() {
   }, 60000);
   setTimeout(() => { const s = readSettings(); if (s.enabled && Date.now() - (s.lastOk || 0) >= s.intervalMinutes * 60000) runBackup(); }, 20000);
 }
+// First choice for backups is another fixed drive of this computer (a failed system disk must not take the backups with it).
+// The folder is picked automatically until the admin chooses one by hand.
+function parseDrives(text) {
+  return String(text || '').split(/\r?\n/).map(l => l.trim().split('=')).filter(p => p.length >= 3 && /^[A-Za-z]:$/.test(p[0]))
+    .map(p => ({ id: p[0].toUpperCase(), type: Number(p[1]), free: Number(p[2]) || 0 }));
+}
+function pickBackupDrive(drives, systemRoot) {
+  const sys = String(systemRoot || '').slice(0, 2).toUpperCase();
+  return drives.filter(d => d.type === 3 && d.id !== sys && d.free > 200 * 1024 * 1024).sort((a, b) => b.free - a.free);
+}
+function autoBackupDir() {
+  return new Promise(resolve => {
+    const s = readSettings();
+    if (process.platform !== 'win32' || s.dirAuto === false) return resolve(null);
+    const cp = require('child_process');
+    const cmd = "Get-WmiObject Win32_LogicalDisk | ForEach-Object { $_.DeviceID + '=' + $_.DriveType + '=' + $_.FreeSpace }";
+    cp.execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', cmd], { timeout: 15000, windowsHide: true }, (err, out) => {
+      if (err) return resolve(null);
+      for (const d of pickBackupDrive(parseDrives(out), path.parse(app.getPath('userData')).root)) {
+        const dir = d.id + '\\AutobenzVahdatBackup';
+        try {
+          fs.mkdirSync(dir, { recursive: true });
+          const probe = path.join(dir, '.write-test'); fs.writeFileSync(probe, '1'); fs.unlinkSync(probe);
+          const cur = readSettings();
+          if (cur.dirAuto === false) return resolve(null);
+          if (path.resolve(cur.dir).toLowerCase() !== path.resolve(dir).toLowerCase()) { cur.dir = dir; cur.dirAuto = true; writeSettings(cur); }
+          return resolve(dir);
+        } catch (_) { /* not writable: try the next drive */ }
+      }
+      resolve(null);
+    });
+  });
+}
 function backupState() {
   const s = readSettings();
   const root = p => path.parse(path.resolve(p)).root.toLowerCase();
@@ -70,7 +103,7 @@ function registerIpc() {
     const s = readSettings();
     if (typeof patch.enabled === 'boolean') s.enabled = patch.enabled;
     if (Number.isFinite(+patch.intervalMinutes)) s.intervalMinutes = Math.min(1440, Math.max(5, Math.round(+patch.intervalMinutes)));
-    if (typeof patch.dir === 'string' && patch.dir) s.dir = patch.dir;
+    if (typeof patch.dir === 'string' && patch.dir) { s.dir = patch.dir; s.dirAuto = false; }
     writeSettings(s); return backupState();
   });
   ipcMain.handle('backup:choose', async () => {
@@ -116,6 +149,8 @@ function createWindow() {
 
 async function smoke() {
   const out = { electron: process.versions.electron, node: process.versions.node };
+  try { const d = pickBackupDrive(parseDrives('C:=3=5000000000\r\nD:=3=900000000000\r\nE:=5=0\r\nF:=2=8000000000\r\n'), 'C:\\'); out.drivePick = d.map(x => x.id).join(','); } catch (e) { out.drivePick = 'ERR ' + e; }
+  if (process.platform === 'win32') { try { out.autoDir = await Promise.race([new Promise(r => require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "Get-WmiObject Win32_LogicalDisk | ForEach-Object { $_.DeviceID + '=' + $_.DriveType + '=' + $_.FreeSpace }"], { timeout: 15000, windowsHide: true }, (e, o) => r(e ? 'ERR ' + e.message : JSON.stringify(parseDrives(o))))), new Promise(r => setTimeout(() => r('timeout'), 20000))]); } catch (e) { out.autoDir = 'ERR ' + e; } }
   try {
     const arr = []; for (let i = 1; i <= 2000; i++) arr.unshift({ id: String(i), status: 'صادرشده', n: 'گیرنده ' + i });
     store.set('k', 'v'); store.set('autobenz-preview-waybills-v2', JSON.stringify(arr));
@@ -125,7 +160,7 @@ async function smoke() {
     const b = await runBackup('smoke'); out.backup = b;
     const tmp = await backup.unpackForRestore(b.file, path.join(app.getPath('userData'), 'r.db'), Database);
     const s2 = new Store(tmp, Database); out.restoredRows = JSON.parse(s2.getAll()['autobenz-preview-waybills-v2']).length; s2.close();
-    out.ok = out.rows === 2001 && out.firstId === '2001' && out.kv === 'v' && b.ok && out.restoredRows === 2001;
+    out.ok = out.drivePick === 'D' && out.rows === 2001 && out.firstId === '2001' && out.kv === 'v' && b.ok && out.restoredRows === 2001;
   } catch (e) { out.ok = false; out.error = String(e && e.stack || e); }
   console.log('SMOKE_RESULT ' + JSON.stringify(out));
   if (process.env.SMOKE_OUT) { try { fs.writeFileSync(process.env.SMOKE_OUT, JSON.stringify(out)); } catch (_) {} }
@@ -137,7 +172,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) app.quit();
 else app.whenReady().then(() => {
   store = new Store(dbPath(), Database);
   if (SMOKE) return smoke();
-  applySeqGuard(); registerIpc(); createWindow(); schedule();
+  applySeqGuard(); registerIpc(); createWindow(); autoBackupDir().catch(() => {}); schedule();
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 });
 app.on('window-all-closed', () => { try { store && store.close(); } catch (_) {} app.quit(); });
