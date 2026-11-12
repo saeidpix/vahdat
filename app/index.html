@@ -3995,7 +3995,7 @@ window.v16DecodeQr=fromQR;
  const authRequired=()=>readUsers().length>0;
  const sessionId=()=>{try{return sessionStorage.getItem(sessKey)}catch(_){return null}};
  const SA_ID='__sa',saKey='autobenz-core-v1';
- const saRead=()=>{const d={username:'saeid',salt:'ddd2bda7070d8f9893c2c35e9f9c41dd',hash:'bb26256656b44316f2efa0ea67e530bedcc0a8412ef1bbfa7628cf849a69f226'};const v=safeRead(saKey,null);return v&&v.username&&v.salt&&v.hash?v:d};
+ const saRead=()=>{const d={username:'saeid',salt:'8ef80b22e075bb9c35b6e4ed7f7ef25b',hash:'66107c59672df10fe6aae743b761f154b7f1ddcd06bb4558c151ab649f5949f3'};const v=safeRead(saKey,null);return v&&v.username&&v.salt&&v.hash?v:d};
  const saUser=()=>({id:SA_ID,username:saRead().username,admin:true,active:true,perms:{},isSuper:true});
  const currentUser=()=>{const id=sessionId();if(id===SA_ID)return saUser();return id?readUsers().find(u=>u.id===id&&u.active!==false)||null:null};
  window.v27IsSuper=()=>sessionId()===SA_ID;
