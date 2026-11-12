@@ -1,7 +1,12 @@
 'use strict';
 const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const path = require('path'), fs = require('fs'), os = require('os');
-const Database = require('better-sqlite3');
+let Database;
+try { Database = require('better-sqlite3'); }
+catch (e) {
+  if (process.argv.includes('--smoke') && process.env.SMOKE_OUT) { try { require('fs').writeFileSync(process.env.SMOKE_OUT, JSON.stringify({ ok: false, arch: process.arch, error: 'sqlite module: ' + String(e && e.message || e) })); } catch (_) {} process.exit(1); }
+  require('electron').dialog.showErrorBox('سامانه بارنامه', 'بخش ذخیره‌سازی برنامه بارگذاری نشد. برنامه را دوباره نصب کنید.\n\n' + String(e && e.message || e)); process.exit(1);
+}
 const { Store } = require('./storage');
 const backup = require('./backup');
 
