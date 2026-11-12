@@ -13,6 +13,8 @@ const { Store } = require('./storage');
 const backup = require('./backup');
 
 const SMOKE = process.argv.includes('--smoke');
+// Forms and tables need no GPU; software rendering avoids crashes with old or missing graphics drivers (Windows 7, 32-bit machines).
+app.disableHardwareAcceleration();
 if (SMOKE) app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'avsmoke-')));
 
 let store, win, backupBusy = false;
