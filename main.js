@@ -158,7 +158,9 @@ async function smoke() {
   __mark('smoke-begin');
   const out = { electron: process.versions.electron, node: process.versions.node, arch: process.arch };
   try { const d = pickBackupDrive(parseDrives('C:=3=5000000000\r\nD:=3=900000000000\r\nE:=5=0\r\nF:=2=8000000000\r\n'), 'C:\\'); out.drivePick = d.map(x => x.id).join(','); } catch (e) { out.drivePick = 'ERR ' + e; }
+  __mark('drive-pick-done');
   if (process.platform === 'win32') { try { out.autoDir = await Promise.race([new Promise(r => require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "Get-WmiObject Win32_LogicalDisk | ForEach-Object { $_.DeviceID + '=' + $_.DriveType + '=' + $_.FreeSpace }"], { timeout: 15000, windowsHide: true }, (e, o) => r(e ? 'ERR ' + e.message : JSON.stringify(parseDrives(o))))), new Promise(r => setTimeout(() => r('timeout'), 20000))]); } catch (e) { out.autoDir = 'ERR ' + e; } }
+  __mark('powershell-done');
   try {
     const arr = []; for (let i = 1; i <= 2000; i++) arr.unshift({ id: String(i), status: 'صادرشده', n: 'گیرنده ' + i });
     __mark('store-open');

@@ -28,7 +28,9 @@ jobs:
             $d = if ($arch -eq "x64") { "win-unpacked" } else { "win-ia32-unpacked" }
             $out = "$PWD\smoke-$arch.json"
             $env:SMOKE_OUT = $out
-            $p = Start-Process -FilePath "dist\$d\Barnameh.exe" -ArgumentList "--smoke" -PassThru -Wait
+            $env:ELECTRON_ENABLE_LOGGING = "1"
+            $p = Start-Process -FilePath "dist\$d\Barnameh.exe" -ArgumentList "--smoke" -PassThru -Wait -RedirectStandardError "$PWD\err-$arch.txt" -RedirectStandardOutput "$PWD\out-$arch.txt"
+            if (Test-Path "$PWD\err-$arch.txt") { Get-Content "$PWD\err-$arch.txt" | Select-Object -Last 25 }
             Write-Host "exit code: $($p.ExitCode)"
             if (Test-Path "$out.stage") { Write-Host "last stage: $(Get-Content "$out.stage")" }
             if (-not (Test-Path $out)) { Write-Error "smoke test produced no result ($arch)"; exit 1 }
