@@ -23,7 +23,7 @@ jobs:
             npx prebuild-install -r electron -t 22.3.27 --arch $arch --platform win32
             if ($LASTEXITCODE -ne 0) { Write-Error "no prebuilt SQLite module for $arch"; exit 1 }
             Pop-Location
-            npx electron-builder --win nsis "--$arch" --publish never -c.npmRebuild=false
+            npx electron-builder --win nsis "--$arch" --publish never
             if ($LASTEXITCODE -ne 0) { exit 1 }
             $d = if ($arch -eq "x64") { "win-unpacked" } else { "win-ia32-unpacked" }
             $out = "$PWD\smoke-$arch.json"

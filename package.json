@@ -46,7 +46,8 @@
     "asarUnpack": [
       "**/node_modules/better-sqlite3/**"
     ],
-    "extraResources": []
+    "extraResources": [],
+    "npmRebuild": false
   },
   "dependencies": {
     "better-sqlite3": "9.6.0"
