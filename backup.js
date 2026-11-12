@@ -34,7 +34,21 @@ function prune(dir, now = Date.now()) {
     const d = new Date(f.time), k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     if (!perDay.has(k)) { perDay.add(k); keep.add(f.name); }
   }
+  // safety: the newest 10 backups are never deleted, whatever the clock says (a wrong system date must not wipe the history)
+  files.slice(0, 10).forEach(f => keep.add(f.name));
   for (const f of files) if (!keep.has(f.name)) { try { fs.unlinkSync(f.file); } catch (_) {} }
+  // leftovers of interrupted or older runs
+  try { for (const n of fs.readdirSync(dir)) if (/\.db\.tmp(-shm|-wal)?$/.test(n)) { try { fs.unlinkSync(path.join(dir, n)); } catch (_) {} } } catch (_) {}
+}
+// a copied database is still in WAL mode; switch it to a plain single file so that checking it leaves no -shm/-wal files behind
+function checkCopy(Database, file) {
+  const c = new Database(file);
+  try {
+    c.pragma('journal_mode = DELETE');
+    const r = c.pragma('quick_check', { simple: true });
+    if (r !== 'ok') throw new Error('integrity check failed: ' + r);
+    return c.prepare('SELECT count(*) n FROM waybills').get().n;
+  } finally { c.close(); for (const ext of ['-shm', '-wal']) { try { fs.unlinkSync(file + ext); } catch (_) {} } }
 }
 
 async function makeBackup(store, dir, tag) {
@@ -42,13 +56,7 @@ async function makeBackup(store, dir, tag) {
   const name = `backup-${stamp(new Date())}${tag ? '-' + tag : ''}.db`;
   const tmp = path.join(dir, name + '.tmp');
   await store.db.backup(tmp);
-  let waybills = 0;
-  const c = new store.Database(tmp, { readonly: true });
-  try {
-    const r = c.pragma('quick_check', { simple: true });
-    if (r !== 'ok') throw new Error('integrity check failed: ' + r);
-    waybills = c.prepare('SELECT count(*) n FROM waybills').get().n;
-  } finally { c.close(); }
+  const waybills = checkCopy(store.Database, tmp);
   const out = path.join(dir, name + '.gz');
   await pipeline(fs.createReadStream(tmp), zlib.createGzip({ level: 6 }), fs.createWriteStream(out));
   fs.unlinkSync(tmp);
@@ -60,8 +68,7 @@ async function makeBackup(store, dir, tag) {
 async function unpackForRestore(gzFile, targetPath, Database) {
   const tmp = targetPath + '.restoring';
   await pipeline(fs.createReadStream(gzFile), zlib.createGunzip(), fs.createWriteStream(tmp));
-  const c = new Database(tmp, { readonly: true });
-  try { if (c.pragma('quick_check', { simple: true }) !== 'ok') throw new Error('backup is damaged'); } finally { c.close(); }
+  try { checkCopy(Database, tmp); } catch (e) { try { fs.unlinkSync(tmp); } catch (_) {} throw new Error('backup is damaged'); }
   return tmp;
 }
 module.exports = { makeBackup, list, prune, unpackForRestore, stamp };

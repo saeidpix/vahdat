@@ -11,6 +11,18 @@ if (SMOKE) app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'avsmok
 let store, win, backupBusy = false;
 const dbPath = () => path.join(app.getPath('userData'), 'autobenz.db');
 const settingsPath = () => path.join(app.getPath('userData'), 'backup-settings.json');
+// Highest waybill number ever issued, kept outside the database: after restoring an older backup the numbers issued
+// since that backup must not be handed out again.
+const SEQ_KEY = 'autobenz-preview-waybill-sequence-v13';
+const seqPath = () => path.join(app.getPath('userData'), 'waybill-seq.json');
+const readSeqGuard = () => { try { return Number(JSON.parse(fs.readFileSync(seqPath(), 'utf8')).max) || 0; } catch (_) { return 0; } };
+let seqGuard = 0;
+function guardSeq(v) { let n = 0; try { n = Number(JSON.parse(v)) || 0; } catch (_) {} if (n > seqGuard) { seqGuard = n; try { fs.writeFileSync(seqPath(), JSON.stringify({ max: n })); } catch (_) {} } }
+function applySeqGuard() {
+  seqGuard = readSeqGuard();
+  let cur = 0; try { cur = Number(JSON.parse(store.getAll()[SEQ_KEY] || '0')) || 0; } catch (_) {}
+  if (seqGuard > cur) store.set(SEQ_KEY, JSON.stringify(seqGuard)); else if (cur > seqGuard) guardSeq(JSON.stringify(cur));
+}
 const defaults = () => ({ enabled: true, intervalMinutes: 60, dir: path.join(app.getPath('userData'), 'backups'), lastOk: null, lastError: null, lastFile: null });
 function readSettings() { try { return { ...defaults(), ...JSON.parse(fs.readFileSync(settingsPath(), 'utf8')) }; } catch (_) { return defaults(); } }
 function writeSettings(s) { fs.writeFileSync(settingsPath(), JSON.stringify(s, null, 1)); }
@@ -40,13 +52,19 @@ function schedule() {
 function backupState() {
   const s = readSettings();
   const root = p => path.parse(path.resolve(p)).root.toLowerCase();
-  return { settings: s, list: backup.list(s.dir), sameDrive: root(s.dir) === root(dbPath()), dbPath: dbPath() };
+  const due = Math.max(3 * s.intervalMinutes * 60000, 24 * 3600000);
+  const warn = s.enabled ? ((s.lastErrorAt && s.lastErrorAt > (s.lastOk || 0)) ? 'error' : (s.lastOk && Date.now() - s.lastOk > due ? 'stale' : '')) : 'off';
+  return { settings: s, warn, list: backup.list(s.dir), sameDrive: root(s.dir) === root(dbPath()), dbPath: dbPath() };
 }
 
 function registerIpc() {
   ipcMain.on('kv:all', e => { e.returnValue = store.getAll(); });
-  ipcMain.on('kv:set', (_e, k, v) => { try { store.set(k, v); } catch (err) { console.error('kv:set', err); } });
-  ipcMain.on('kv:remove', (_e, k) => { try { store.remove(k); } catch (err) { console.error(err); } });
+  const fail = (e, err) => { console.error('storage', err); try { e.sender.send('kv:error', String(err && err.message || err)); } catch (_) {} };
+  ipcMain.on('kv:set', (e, k, v) => { try { store.set(k, v); if (k === SEQ_KEY) guardSeq(v); } catch (err) { fail(e, err); } });
+  ipcMain.on('kv:remove', (e, k) => { try { store.remove(k); } catch (err) { fail(e, err); } });
+  // native, synchronous confirm/alert: avoids the Electron/Windows problem where inputs stop accepting focus after window.confirm()
+  ipcMain.on('dlg:confirm', (e, msg) => { e.returnValue = dialog.showMessageBoxSync(win, { type: 'question', buttons: ['بله', 'خیر'], defaultId: 0, cancelId: 1, noLink: true, title: 'اتوبنز وحدت', message: String(msg || '') }) === 0; });
+  ipcMain.on('dlg:alert', (e, msg) => { dialog.showMessageBoxSync(win, { type: 'info', buttons: ['متوجه شدم'], noLink: true, title: 'اتوبنز وحدت', message: String(msg || '') }); e.returnValue = true; });
   ipcMain.handle('backup:state', () => backupState());
   ipcMain.handle('backup:set', (_e, patch) => {
     const s = readSettings();
@@ -72,6 +90,10 @@ function registerIpc() {
       for (const ext of ['-wal', '-shm']) { try { fs.unlinkSync(dbPath() + ext); } catch (_) {} }
       fs.renameSync(dbPath(), dbPath() + '.before-restore-' + Date.now());
       fs.renameSync(tmp, dbPath());
+      try { // keep only the 3 newest pre-restore copies of the live database
+        const dir = path.dirname(dbPath()), base = path.basename(dbPath()) + '.before-restore-';
+        fs.readdirSync(dir).filter(n => n.startsWith(base)).sort().reverse().slice(3).forEach(n => { try { fs.unlinkSync(path.join(dir, n)); } catch (_) {} });
+      } catch (_) {}
       app.relaunch(); app.exit(0);
       return { ok: true };
     } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
@@ -85,6 +107,9 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: false, nodeIntegration: false, sandbox: false, spellcheck: false }
   });
   Menu.setApplicationMenu(null);
+  // the window must never leave the app page (a dropped file or a stray link would replace the whole program)
+  win.webContents.on('will-navigate', (e, url) => { if (url.split('#')[0] !== win.webContents.getURL().split('#')[0]) e.preventDefault(); });
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
   win.once('ready-to-show', () => { win.maximize(); win.show(); });
 }
@@ -112,7 +137,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) app.quit();
 else app.whenReady().then(() => {
   store = new Store(dbPath(), Database);
   if (SMOKE) return smoke();
-  registerIpc(); createWindow(); schedule();
+  applySeqGuard(); registerIpc(); createWindow(); schedule();
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 });
 app.on('window-all-closed', () => { try { store && store.close(); } catch (_) {} app.quit(); });

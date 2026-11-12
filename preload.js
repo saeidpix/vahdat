@@ -13,6 +13,9 @@ P.removeItem = function (k) { if (!own(this)) return o.rem.call(this, k); k = St
 P.clear = function () { if (!own(this)) return o.clr.call(this); for (const k of [...data.keys()]) ipcRenderer.send('kv:remove', k); data.clear(); };
 P.key = function (i) { return own(this) ? ([...data.keys()][i] ?? null) : o.key.call(this, i); };
 Object.defineProperty(P, 'length', { configurable: true, get() { return own(this) ? data.size : lenDesc.get.call(this); } });
+window.confirm = msg => ipcRenderer.sendSync('dlg:confirm', String(msg == null ? '' : msg));
+window.alert = msg => { ipcRenderer.sendSync('dlg:alert', String(msg == null ? '' : msg)); };
+ipcRenderer.on('kv:error', (_e, msg) => { try { window.dispatchEvent(new CustomEvent('autobenz:storage-error', { detail: msg })); } catch (_) {} });
 window.autobenzDesktop = {
   isDesktop: true,
   backupState: () => ipcRenderer.invoke('backup:state'),
