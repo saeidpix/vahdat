@@ -27,15 +27,7 @@
       "output": "dist"
     },
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
-        }
-      ],
+      "target": "nsis",
       "icon": "build/icon.png"
     },
     "nsis": {
@@ -46,7 +38,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "سامانه بارنامه",
-      "artifactName": "Barnameh-Setup-${version}.exe",
+      "artifactName": "Barnameh-Setup-${version}-${arch}.exe",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "language": "1065"

@@ -13,20 +13,28 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 18 }
       - run: npm install --no-audit --no-fund
-      - name: Build installer (64-bit + 32-bit in one setup file)
-        run: npx electron-builder --win nsis --x64 --ia32 --publish never
-      - name: Smoke test packaged app, 64-bit and 32-bit (SQLite + backup under Electron)
+      - name: Build and smoke-test both installers (64-bit, then 32-bit)
         shell: pwsh
         run: |
-          foreach ($d in @("win-unpacked","win-ia32-unpacked")) {
-            $out = "$PWD\smoke-$d.json"
+          foreach ($arch in @("x64","ia32")) {
+            # the native SQLite module must match the architecture of the packaged app
+            Push-Location node_modules/better-sqlite3
+            if (Test-Path build) { Remove-Item -Recurse -Force build }
+            npx prebuild-install -r electron -t 22.3.27 --arch $arch --platform win32
+            if ($LASTEXITCODE -ne 0) { Write-Error "no prebuilt SQLite module for $arch"; exit 1 }
+            Pop-Location
+            npx electron-builder --win nsis "--$arch" --publish never -c.npmRebuild=false
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            $d = if ($arch -eq "x64") { "win-unpacked" } else { "win-ia32-unpacked" }
+            $out = "$PWD\smoke-$arch.json"
             $env:SMOKE_OUT = $out
             $p = Start-Process -FilePath "dist\$d\Barnameh.exe" -ArgumentList "--smoke" -PassThru -Wait
-            if (-not (Test-Path $out)) { Write-Error "smoke test produced no result ($d)"; exit 1 }
+            if (-not (Test-Path $out)) { Write-Error "smoke test produced no result ($arch)"; exit 1 }
             Get-Content $out
             $r = Get-Content $out | ConvertFrom-Json
-            if (-not $r.ok) { Write-Error "smoke test failed ($d)"; exit 1 }
+            if (-not $r.ok -or $r.arch -ne $arch) { Write-Error "smoke test failed ($arch)"; exit 1 }
           }
+          Get-ChildItem dist\*.exe | Select-Object Name, Length
       - uses: actions/upload-artifact@v4
         with: { name: setup, path: dist/Barnameh-Setup-*.exe }
       - uses: actions/upload-artifact@v4
