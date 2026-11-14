@@ -3637,8 +3637,21 @@ $('v16Decode').onclick=async()=>{
  }finally{busy=false;if(document.getElementById('v23Popup').hidden)$('v16ScanInput').focus()}
 };
 $('v16ScanInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('v16Decode').click()}});
+// Compare Persian city names consistently, including Arabic keyboard variants.
+function receiptCity(value){
+ return String(value||'').normalize('NFKC').replace(/[يى]/g,'ی').replace(/ك/g,'ک')
+  .replace(/[\u064b-\u065f\u0670\u200c\u200d\u200e\u200f\ufeff]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+}
+function receiptRouteError(p,branch){
+ const origin=receiptCity(p.o), destination=receiptCity(p.d), current=receiptCity(branch);
+ if(!origin||!destination||!current)return 'مبدأ، مقصد یا شهر این شعبه مشخص نیست؛ دریافت ثبت نشد. تنظیمات شعبه و بارنامه را بررسی کنید.';
+ if(origin===destination||origin===current)return 'مبدأ و مقصد نمی‌توانند یکی باشند. این بارنامه در شعبه مبدأ قابل دریافت نیست.';
+ return '';
+}
 function v23Save(){
  if(!scanned)return;
+ const routeError=receiptRouteError(scanned,v24Origin());
+ if(routeError){$('v16ReceiveResult').textContent=routeError;return}
  const list=readSaved();if(list.some(x=>String(x.id)===String(scanned.id)&&String(x.ts)===String(scanned.ts))){$('v16ReceiveResult').textContent='این بارنامه قبلاً در مقصد دریافت شده است.';return}
  const stored=normalizeWaybillRecords(safeRead(recKey,[])),source=stored.find(x=>String(x.id)===String(scanned.id));
  // A colliding numeric id from another branch must not silently overwrite local waybill data.
