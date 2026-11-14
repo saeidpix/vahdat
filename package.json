@@ -1,7 +1,7 @@
 {
   "name": "barnameh",
-  "productName": "Barnameh",
-  "version": "1.0.0",
+  "productName": "Barresan",
+  "version": "1.0.1",
   "description": "Waybill management software",
   "author": "Saeed Fadaeian",
   "main": "main.js",
@@ -14,7 +14,7 @@
   },
   "build": {
     "appId": "ir.saeidpix.barnameh",
-    "productName": "Barnameh",
+    "productName": "Barresan",
     "files": [
       "main.js",
       "preload.js",
@@ -37,8 +37,8 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "سامانه بارنامه",
-      "artifactName": "Barnameh-Setup-${version}-${arch}.exe",
+      "shortcutName": "باررسان",
+      "artifactName": "Barresan-Setup-${version}-${arch}.exe",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "language": "1065"

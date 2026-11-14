@@ -2,7 +2,7 @@ name: build-windows-installer
 on:
   workflow_dispatch:
   push:
-    branches: [release/v1]
+    branches: [release/v1, codex/print-layout-and-upgrade-safety]
 jobs:
   build:
     runs-on: windows-latest
@@ -29,11 +29,11 @@ jobs:
             $out = "$PWD\smoke-$arch.json"
             $env:SMOKE_OUT = $out
             $env:ELECTRON_ENABLE_LOGGING = "1"
-            $p = Start-Process -FilePath "dist\$d\Barnameh.exe" -ArgumentList "--smoke" -PassThru -Wait -RedirectStandardError "$PWD\err-$arch.txt" -RedirectStandardOutput "$PWD\out-$arch.txt"
+            $p = Start-Process -FilePath "dist\$d\Barresan.exe" -ArgumentList "--smoke" -PassThru -Wait -RedirectStandardError "$PWD\err-$arch.txt" -RedirectStandardOutput "$PWD\out-$arch.txt"
             if (-not (Test-Path $out)) {
               Write-Host "::warning::$arch app did not finish with the default GPU setup on this runner; retrying with --in-process-gpu"
               if (Test-Path "$PWD\err-$arch.txt") { Get-Content "$PWD\err-$arch.txt" | Select-Object -Last 6 }
-              $p = Start-Process -FilePath "dist\$d\Barnameh.exe" -ArgumentList "--smoke","--in-process-gpu" -PassThru -Wait
+              $p = Start-Process -FilePath "dist\$d\Barresan.exe" -ArgumentList "--smoke","--in-process-gpu" -PassThru -Wait
             }
             Write-Host "exit code: $($p.ExitCode)"
             if (Test-Path "$out.stage") { Write-Host "last stage: $(Get-Content "$out.stage")" }
@@ -44,7 +44,7 @@ jobs:
           }
           Get-ChildItem dist\*.exe | Select-Object Name, Length
       - uses: actions/upload-artifact@v4
-        with: { name: setup, path: dist/Barnameh-Setup-*.exe }
+        with: { name: setup, path: dist/Barresan-Setup-*.exe }
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: smoke-result, path: smoke-*.json }

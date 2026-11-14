@@ -7,7 +7,7 @@ let Database;
 try { Database = require('better-sqlite3'); __mark('required'); }
 catch (e) {
   if (process.argv.includes('--smoke') && process.env.SMOKE_OUT) { try { require('fs').writeFileSync(process.env.SMOKE_OUT, JSON.stringify({ ok: false, arch: process.arch, error: 'sqlite module: ' + String(e && e.message || e) })); } catch (_) {} process.exit(1); }
-  require('electron').dialog.showErrorBox('سامانه بارنامه', 'بخش ذخیره‌سازی برنامه بارگذاری نشد. برنامه را دوباره نصب کنید.\n\n' + String(e && e.message || e)); process.exit(1);
+  require('electron').dialog.showErrorBox('باررسان', 'بخش ذخیره‌سازی برنامه بارگذاری نشد. برنامه را دوباره نصب کنید.\n\n' + String(e && e.message || e)); process.exit(1);
 }
 const { Store } = require('./storage');
 const backup = require('./backup');
@@ -17,7 +17,8 @@ const SMOKE = process.argv.includes('--smoke');
 app.disableHardwareAcceleration();
 // 32-bit build: keep graphics inside the main process. On machines without a usable graphics driver the separate GPU process of the 32-bit build fails to start and takes the whole program down.
 if (process.arch === 'ia32') app.commandLine.appendSwitch('in-process-gpu');
-if (SMOKE) app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'avsmoke-')));
+// Keep existing installations' database path stable when the visible product name changes.
+app.setPath('userData', SMOKE ? fs.mkdtempSync(path.join(os.tmpdir(), 'avsmoke-')) : path.join(app.getPath('appData'), 'Barnameh'));
 
 let store, win, backupBusy = false;
 const dbPath = () => path.join(app.getPath('userData'), 'autobenz.db');
@@ -107,8 +108,8 @@ function registerIpc() {
   ipcMain.on('kv:set', (e, k, v) => { try { store.set(k, v); if (k === SEQ_KEY) guardSeq(v); } catch (err) { fail(e, err); } });
   ipcMain.on('kv:remove', (e, k) => { try { store.remove(k); } catch (err) { fail(e, err); } });
   // native, synchronous confirm/alert: avoids the Electron/Windows problem where inputs stop accepting focus after window.confirm()
-  ipcMain.on('dlg:confirm', (e, msg) => { e.returnValue = dialog.showMessageBoxSync(win, { type: 'question', buttons: ['بله', 'خیر'], defaultId: 0, cancelId: 1, noLink: true, title: 'سامانه بارنامه', message: String(msg || '') }) === 0; });
-  ipcMain.on('dlg:alert', (e, msg) => { dialog.showMessageBoxSync(win, { type: 'info', buttons: ['متوجه شدم'], noLink: true, title: 'سامانه بارنامه', message: String(msg || '') }); e.returnValue = true; });
+  ipcMain.on('dlg:confirm', (e, msg) => { e.returnValue = dialog.showMessageBoxSync(win, { type: 'question', buttons: ['بله', 'خیر'], defaultId: 0, cancelId: 1, noLink: true, title: 'باررسان', message: String(msg || '') }) === 0; });
+  ipcMain.on('dlg:alert', (e, msg) => { dialog.showMessageBoxSync(win, { type: 'info', buttons: ['متوجه شدم'], noLink: true, title: 'باررسان', message: String(msg || '') }); e.returnValue = true; });
   // Print only the app window to the Windows default printer, without a dialog.
   ipcMain.handle('waybill:print-silent', e => new Promise(resolve => {
     if (!win || e.sender !== win.webContents) return resolve({ ok: false, error: 'invalid sender' });
@@ -154,7 +155,7 @@ function registerIpc() {
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1366, height: 820, show: false, title: 'سامانه بارنامه', autoHideMenuBar: true,
+    width: 1366, height: 820, show: false, title: 'باررسان', autoHideMenuBar: true,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: false, nodeIntegration: false, sandbox: false, spellcheck: false }
   });
