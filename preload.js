@@ -18,6 +18,7 @@ window.alert = msg => { ipcRenderer.sendSync('dlg:alert', String(msg == null ? '
 ipcRenderer.on('kv:error', (_e, msg) => { try { window.dispatchEvent(new CustomEvent('autobenz:storage-error', { detail: msg })); } catch (_) {} });
 window.autobenzDesktop = {
   isDesktop: true,
+  printWaybillSilent: () => ipcRenderer.invoke('waybill:print-silent'),
   backupState: () => ipcRenderer.invoke('backup:state'),
   backupSet: p => ipcRenderer.invoke('backup:set', p),
   backupChoose: () => ipcRenderer.invoke('backup:choose'),

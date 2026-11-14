@@ -109,6 +109,14 @@ function registerIpc() {
   // native, synchronous confirm/alert: avoids the Electron/Windows problem where inputs stop accepting focus after window.confirm()
   ipcMain.on('dlg:confirm', (e, msg) => { e.returnValue = dialog.showMessageBoxSync(win, { type: 'question', buttons: ['بله', 'خیر'], defaultId: 0, cancelId: 1, noLink: true, title: 'سامانه بارنامه', message: String(msg || '') }) === 0; });
   ipcMain.on('dlg:alert', (e, msg) => { dialog.showMessageBoxSync(win, { type: 'info', buttons: ['متوجه شدم'], noLink: true, title: 'سامانه بارنامه', message: String(msg || '') }); e.returnValue = true; });
+  // Print only the app window to the Windows default printer, without a dialog.
+  ipcMain.handle('waybill:print-silent', e => new Promise(resolve => {
+    if (!win || e.sender !== win.webContents) return resolve({ ok: false, error: 'invalid sender' });
+    try {
+      e.sender.print({ silent: true, printBackground: true, pageSize: 'A4' },
+        (success, reason) => resolve({ ok: success, error: reason || '' }));
+    } catch (err) { resolve({ ok: false, error: String(err && err.message || err) }); }
+  }));
   ipcMain.handle('backup:state', () => backupState());
   ipcMain.handle('backup:set', (_e, patch) => {
     const s = readSettings();
