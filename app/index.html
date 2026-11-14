@@ -1326,11 +1326,11 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
              </div>
           </div>
           <div class="sm-card v18-settings-card"><div class="sm-card-head"><div><h5>رفتار چاپ</h5><p>فرم اصلی با تغییر این تنظیمات شلوغ نمی‌شود.</p></div></div>
-             <div class="sm-control-row v18-print-action"><div><label for="printChoice">بعد از ثبت بارنامه</label><small>چاپگر از پنجره استاندارد چاپ سیستم انتخاب می‌شود.</small></div>
-               <select id="printChoice"><option value="manual">فقط با درخواست کارمند</option><option value="ask">پرسش برای نمایش چاپ</option><option value="preview">باز شدن پیش‌نمایش چاپ</option></select>
+             <div class="sm-control-row v18-print-action"><div><label for="printChoice">بعد از ثبت بارنامه</label><small>در چاپ مستقیم از چاپگر پیش‌فرض ویندوز استفاده می‌شود.</small></div>
+               <select id="printChoice"><option value="manual">فقط با درخواست کارمند</option><option value="ask">پرسش برای نمایش چاپ</option><option value="preview">باز شدن پیش‌نمایش چاپ</option><option value="silent">چاپ مستقیم بدون پنجره</option></select>
              </div>
           </div>
-          <div class="sm-hint v18-print-hint">چاپگر و اندازه کاغذ هنگام چاپ از پنجره‌ی چاپ ویندوز انتخاب می‌شود.</div>
+          <div class="sm-hint v18-print-hint">برای چاپ مستقیم، چاپگر پیش‌فرض ویندوز را از قبل تنظیم کنید. اندازه برگه A4 است.</div>
         </section>
         <section class="sm-page" data-sm-page="display" hidden>
           <div class="sm-card"><div class="sm-card-head"><div><h5>فونت رابط کاربری</h5><p>قابل استفاده با فونت‌های سری B نصب‌شده روی ویندوز؛ بدون ارسال یا جایگزینی فایل فونت.</p></div></div>
@@ -2841,7 +2841,9 @@ function nextLocalId(){
  const lastNumber=serialNumber(safeRead(waybillSeqKey,0));
  return String(Math.max(maxRecord,lastNumber)+1);
 }
+let waybillPrintBusy=false;
 $('#waybillForm').addEventListener('submit',e=>{e.preventDefault();
+ if(waybillPrintBusy)return;
  // Refresh before saving: another tab may have already handed this waybill to a driver.
  const updated=normalizeWaybillRecords(safeRead(recKey,[]));
  if(editingId){
@@ -2856,7 +2858,7 @@ $('#waybillForm').addEventListener('submit',e=>{e.preventDefault();
  else{rec={...data,id:nextLocalId(),createdAt:new Date().toISOString(),status:'صادرشده',driver:''};updated.unshift(rec)}
  if(!safeWrite(recKey,updated))return invalid('ثبت بارنامه انجام نشد؛ ذخیره اطلاعات ممکن نبود.');records=updated;if(__old&&window.v25AuditEdit)window.v25AuditEdit(__old,rec);
  safeWrite(waybillSeqKey,Math.max(serialNumber(safeRead(waybillSeqKey,0)),serialNumber(rec.id)));
- lastSavedId=rec.id;try{localStorage.removeItem(draftKey)}catch(_){}blankForm();$('#formMessage').textContent=__old?'بارنامه شماره '+digits(rec.id)+' ویرایش شد. برگه‌ی چاپ‌شده‌ی قبلی دیگر معتبر نیست؛ دوباره چاپ کنید.':'بارنامه شماره '+digits(rec.id)+' ثبت شد.';if(__old&&window.v23Alert)window.v23Alert('بارنامه '+digits(rec.id)+' ویرایش شد','برگه‌ی چاپ‌شده‌ی قبلی این بارنامه دیگر معتبر نیست و بارکد آن پذیرفته نمی‌شود. برگه‌ی جدید را چاپ کنید و برگه‌ی قبلی را دور بیندازید.');$('#formMessage').className='wb-form-message success';$('#senderName').focus();renderDashboard();if(prefs.print==='preview')printWaybill(rec);else if(prefs.print==='ask'&&confirm('پیش‌نمایش چاپ نمایش داده شود؟'))printWaybill(rec)});
+ lastSavedId=rec.id;try{localStorage.removeItem(draftKey)}catch(_){}blankForm();$('#formMessage').textContent=__old?'بارنامه شماره '+digits(rec.id)+' ویرایش شد. برگه‌ی چاپ‌شده‌ی قبلی دیگر معتبر نیست؛ دوباره چاپ کنید.':'بارنامه شماره '+digits(rec.id)+' ثبت شد.';if(__old&&prefs.print!=='silent'&&window.v23Alert)window.v23Alert('بارنامه '+digits(rec.id)+' ویرایش شد','برگه‌ی چاپ‌شده‌ی قبلی این بارنامه دیگر معتبر نیست و بارکد آن پذیرفته نمی‌شود. برگه‌ی جدید را چاپ کنید و برگه‌ی قبلی را دور بیندازید.');$('#formMessage').className='wb-form-message success';$('#senderName').focus();renderDashboard();if(prefs.print==='silent')printWaybill(rec,true);else if(prefs.print==='preview')printWaybill(rec);else if(prefs.print==='ask'&&confirm('پیش‌نمایش چاپ نمایش داده شود؟'))printWaybill(rec)});
 $('#saveDraft').onclick=()=>{const d=gather();if(safeWrite(draftKey,d)){toast('پیش‌نویس ذخیره شد.');$('#formMessage').textContent='پیش‌نویس ذخیره شد؛ هنوز بارنامه صادر نشده است.';$('#formMessage').className='wb-form-message success'}};
 /* V16: Offline A4 / 3 copies, QR carries a compact compressed snapshot of all principal fields.
    The QR is NOT signed and does NOT establish authenticity or payment authorization. */
@@ -2948,14 +2950,24 @@ function v16PrintTicket(rec,role,qrHtml){
   ${signatureMarkup}
  </article>`;
 }
-async function printWaybill(rec){
+async function printWaybill(rec,silent=false){
+ if(waybillPrintBusy)return false;
  if(!rec||!/^[1-9]\d*$/.test(String(rec.id||''))){toast('ابتدا بارنامه را ثبت کن تا شماره معتبر و QR قابل بازیابی صادر شود.');return false}
+ waybillPrintBusy=true;
  try{
   v18ApplyPrintStyle();
   const payload=await v16EncodeQr(rec);
   const svg=v16QrSvg(payload);
   const html=`<div class="v16-print-sheet ${prefs.printCut===false?'v18-no-cut':''}" dir="rtl">${['نسخه مخصوص بار','نسخه مخصوص مشتری','نسخه مخصوص مقصد'].map(r=>v16PrintTicket(rec,r,svg)).join('')}</div>`;
   document.getElementById('printArea').innerHTML=html;
+  if(silent){
+   if(!window.autobenzDesktop || !window.autobenzDesktop.printWaybillSilent) throw new Error('چاپ مستقیم فقط در نسخه ویندوز برنامه در دسترس است.');
+   if(document.fonts && document.fonts.ready) await document.fonts.ready;
+   await Promise.all(Array.from(document.querySelectorAll('#printArea img')).map(img=>img.decode?img.decode().catch(()=>{}):Promise.resolve()));
+   const result=await window.autobenzDesktop.printWaybillSilent();
+   if(!result || !result.ok) throw new Error('چاپ انجام نشد. چاپگر پیش‌فرض و اتصال آن را بررسی کنید.');
+   return true;
+  }
   document.getElementById('v16PreviewPaper').innerHTML=html;
   document.getElementById('v16PreviewOverlay').hidden=false;
   document.body.classList.add('v16-preview-mode');
@@ -2965,7 +2977,7 @@ async function printWaybill(rec){
  }catch(error){
   toast(error.message||'خطا در ساخت بارکد دوبعدی؛ چاپ انجام نشد.');
   console.error('V16 print QR error',error);return false;
- }
+ }finally{waybillPrintBusy=false}
 }
 $('#v16PrintFromForm').onclick=()=>$('#previewPrint').click();
 $('#previewPrint').onclick=async()=>{
