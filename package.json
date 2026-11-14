@@ -1,7 +1,7 @@
 {
   "name": "barnameh",
   "productName": "Barresan",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Waybill management software",
   "author": "Saeed Fadaeian",
   "main": "main.js",

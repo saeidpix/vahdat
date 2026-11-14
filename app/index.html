@@ -1374,7 +1374,7 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
 
 
 <div class="v16-preview-overlay" id="v16PreviewOverlay" hidden dir="rtl" role="dialog" aria-modal="true" aria-labelledby="v16PreviewTitle">
-  <div class="v16-preview-head"><div><strong id="v16PreviewTitle">پیش‌نمایش چاپ A4 — سه نسخه</strong><span>نسخه بار · نسخه مشتری · نسخه مقصد</span></div><div class="v16-row-buttons"><button class="v16-outline" id="v16ClosePreview" type="button">بازگشت</button><button class="v16-primary" type="button" id="v16PrintNow">چاپ روی کاغذ A4</button></div></div>
+  <div class="v16-preview-head"><div><strong id="v16PreviewTitle">پیش‌نمایش چاپ A4 — سه نسخه</strong><span>نسخه بار · نسخه مشتری · نسخه مقصد</span><span id="v16PreviewWarning" style="color:#ffd17a;font-weight:800"></span></div><div class="v16-row-buttons"><button class="v16-outline" id="v16ClosePreview" type="button">بازگشت</button><button class="v16-primary" type="button" id="v16PrintNow">چاپ روی کاغذ A4</button></div></div>
   <div class="v16-preview-paper" id="v16PreviewPaper"></div>
   <div class="v16-preview-note" id="v16PreviewNote">در پنجره‌ی چاپ، اندازه A4، حالت عمودی و مقیاس ۱۰۰٪ را انتخاب کنید.</div>
 </div>
@@ -2976,7 +2976,13 @@ async function v16CheckPrintFits(html){
  try{
   await Promise.all(Array.from(box.querySelectorAll('img')).map(img=>img.decode?img.decode().catch(()=>{}):Promise.resolve()));
   const fields=box.querySelectorAll('.v16-ticket,.v16-doc-main,.v16-party,.v16-cell strong,.v16-line strong,.v16-fee,.v16-header-meta');
-  return Array.from(fields).every(el=>el.scrollHeight<=el.clientHeight+2 && el.scrollWidth<=el.clientWidth+2);
+  // Font glyphs can extend a few pixels beyond line boxes without being clipped.
+  return Array.from(fields).every(el=>{
+   const style=getComputedStyle(el);
+   const clipsX=['hidden','clip'].includes(style.overflowX);
+   const clipsY=['hidden','clip'].includes(style.overflowY);
+   return (!clipsY||el.scrollHeight<=el.clientHeight+6) && (!clipsX||el.scrollWidth<=el.clientWidth+6);
+  });
  }finally{box.remove()}
 }
 async function printWaybill(rec,silent=false){
@@ -3000,8 +3006,9 @@ async function printWaybill(rec,silent=false){
    return true;
   }
   document.getElementById('v16PreviewPaper').innerHTML=html;
-  document.getElementById('v16PrintNow').disabled=!fits;
-  document.getElementById('v16PreviewNote').textContent=fits?'در پنجره‌ی چاپ، اندازه A4، حالت عمودی و مقیاس ۱۰۰٪ را انتخاب کنید.':'اطلاعات در این طرح جا نمی‌شود؛ برای چاپ کامل، طرح کوچک‌تر یا فونت کوچک‌تر را انتخاب کنید.';
+  document.getElementById('v16PrintNow').disabled=false;
+  document.getElementById('v16PreviewWarning').textContent=fits?'':'هشدار: ممکن است بخشی از متن در برگه جا نشود.';
+  document.getElementById('v16PreviewNote').textContent=fits?'در پنجره‌ی چاپ، اندازه A4، حالت عمودی و مقیاس ۱۰۰٪ را انتخاب کنید.':'هشدار: بخشی از اطلاعات ممکن است در این طرح جا نشود. برای چاپ کامل، طرح یا فونت کوچک‌تر انتخاب کنید.';
   document.getElementById('v16PreviewOverlay').hidden=false;
   document.body.classList.add('v16-preview-mode');
   window.__v16LastPayload=payload;window.__v16LastPrint=rec;
@@ -4068,7 +4075,7 @@ window.v16DecodeQr=fromQR;
  function ensureLogin(){
   let ov=$('v23Login');if(ov)return ov;
   ov=document.createElement('div');ov.id='v23Login';ov.hidden=true;ov.dir='rtl';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');
-  ov.innerHTML='<form class="v23-login-card" id="v23LoginForm" autocomplete="off"><h2>ورود به باررسان</h2><small style="color:#6385a0">نسخه ۱٫۰٫۱</small><p>نام کاربری و رمز عبور را وارد کنید.</p><label for="v23LoginUser">نام کاربری</label><input id="v23LoginUser" autocomplete="off" spellcheck="false"/><label for="v23LoginPass">رمز عبور</label><input id="v23LoginPass" type="password" autocomplete="off"/><button type="submit" id="v23LoginBtn">ورود</button><div id="v23LoginMsg" role="alert"></div></form>';
+  ov.innerHTML='<form class="v23-login-card" id="v23LoginForm" autocomplete="off"><h2>ورود به باررسان</h2><small style="color:#6385a0">نسخه ۱٫۰٫۲</small><p>نام کاربری و رمز عبور را وارد کنید.</p><label for="v23LoginUser">نام کاربری</label><input id="v23LoginUser" autocomplete="off" spellcheck="false"/><label for="v23LoginPass">رمز عبور</label><input id="v23LoginPass" type="password" autocomplete="off"/><button type="submit" id="v23LoginBtn">ورود</button><div id="v23LoginMsg" role="alert"></div></form>';
   document.body.appendChild(ov);
   $('v23LoginForm').addEventListener('submit',e=>{e.preventDefault();tryLogin()});
   $('v23LoginUser').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('v23LoginPass').focus()}});
@@ -4496,7 +4503,7 @@ window.v16DecodeQr=fromQR;
     <div class="v24-f full"><label for="v24sAddr">آدرس</label><textarea id="v24sAddr" rows="2" maxlength="240"></textarea></div>
    </div>
    <div style="margin-top:16px"><button class="v24-btn" type="button" id="v24sSave">ذخیره اطلاعات شرکت</button></div><div class="v24-msg" id="v24sMsg"></div></div>
-   <div class="sm-card"><div class="sm-card-head"><div><h5>درباره برنامه</h5><p>باررسان — نسخه ۱٫۰٫۱</p></div></div>${SIGN}</div>`;
+   <div class="sm-card"><div class="sm-card-head"><div><h5>درباره برنامه</h5><p>باررسان — نسخه ۱٫۰٫۲</p></div></div>${SIGN}</div>`;
   host.appendChild(pg);
   const fill=()=>{const c=company()||{};$('v24sName').value=c.name||'';$('v24sPhone').value=c.phone||'';$('v24sOrigin').value=c.origin||'';$('v24sAddr').value=c.address||''};
   $('v24sSave').onclick=()=>{
@@ -4552,7 +4559,7 @@ window.v16DecodeQr=fromQR;
   const p=panel.querySelector('.sm-preview-label');if(p)p.textContent='نسخه ۱';
   const t=panel.querySelector('.sm-toolbar-tip');
   if(t&&t.lastChild)t.lastChild.nodeValue=window.autobenzDesktop?' ذخیره در پایگاه‌داده‌ی همین رایانه':' ذخیره در همین مرورگر';
-  const f=panel.querySelector('.sm-side-foot');if(f){f.innerHTML='<span class="sm-status-circle"></span> باررسان · نسخه ۱٫۰٫۱ <small>طراحی: سعید فداییان</small>'}
+  const f=panel.querySelector('.sm-side-foot');if(f){f.innerHTML='<span class="sm-status-circle"></span> باررسان · نسخه ۱٫۰٫۲ <small>طراحی: سعید فداییان</small>'}
   const box=panel.querySelector('.sm-preview-box');
   if(box){
    const d=window.autobenzDesktop;

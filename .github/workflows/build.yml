@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 18 }
       - run: npm install --no-audit --no-fund
+      - name: Check print regression
+        run: node tests/print-regression.js
       - name: Build and smoke-test both installers (64-bit, then 32-bit)
         shell: pwsh
         run: |
