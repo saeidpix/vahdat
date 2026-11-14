@@ -33,6 +33,7 @@ jobs:
             $d = if ($arch -eq "x64") { "win-unpacked" } else { "win-ia32-unpacked" }
             if (-not (Test-Path "dist\$d\resources\app-update.yml")) { Write-Error "missing app-update.yml ($arch)"; exit 1 }
             $out = "$PWD\smoke-$arch.json"
+            $env:SMOKE_INSTALLER = (Resolve-Path "dist\Barresan-Setup-1.0.3-$arch.exe").Path
             $env:SMOKE_OUT = $out
             $env:ELECTRON_ENABLE_LOGGING = "1"
             $p = Start-Process -FilePath "dist\$d\Barresan.exe" -ArgumentList "--smoke" -PassThru -Wait -RedirectStandardError "$PWD\err-$arch.txt" -RedirectStandardOutput "$PWD\out-$arch.txt"

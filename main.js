@@ -218,22 +218,33 @@ function createWindow() {
   win.once('ready-to-show', () => { win.maximize(); win.show(); });
 }
 
-// Exercise the actual packaged updater against a local test server, without installing anything.
+// Exercise the real differential downloader against a local range-enabled server.
 async function smokeUpdater() {
   const http = require('http'), crypto = require('crypto');
-  const bytes = Buffer.from('barresan-updater-smoke-test');
+  const installer = process.env.SMOKE_INSTALLER;
+  if (!installer || !fs.existsSync(installer) || !fs.existsSync(installer + '.blockmap')) throw new Error('updater test installer missing');
+  const bytes = fs.readFileSync(installer), blockmap = fs.readFileSync(installer + '.blockmap');
   const hash = crypto.createHash('sha512').update(bytes).digest('base64');
   const arch = process.arch, oldLocal = process.env.LOCALAPPDATA;
   process.env.LOCALAPPDATA = app.getPath('userData');
-  let server; const sockets = new Set();
+  let server, servedBytes = 0; const sockets = new Set();
   try {
     server = http.createServer((req, res) => {
-      if (req.url.startsWith('/latest-')) {
-        const url = 'http://127.0.0.1:' + server.address().port + '/Barresan-Setup-1.0.4-' + arch + '.exe';
+      const pathname = req.url.split('?')[0];
+      if (pathname.startsWith('/latest-')) {
+        const url = 'http://127.0.0.1:' + server.address().port + '/v1.0.4/Barresan-Setup-1.0.4-' + arch + '.exe';
         const body = 'version: 1.0.4\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
         res.writeHead(200, { 'Content-Type': 'text/yaml' }); res.end(body);
-      } else if (req.url.endsWith('.exe')) {
-        res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': bytes.length }); res.end(bytes);
+      } else if (pathname.endsWith('.blockmap')) {
+        res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': blockmap.length }); res.end(blockmap);
+      } else if (pathname.endsWith('.exe')) {
+        const range = /^bytes=(\\d+)-(\\d+)$/.exec(req.headers.range || '');
+        if (range) {
+          const first=Number(range[1]), last=Math.min(Number(range[2]),bytes.length-1), part=bytes.subarray(first,last+1);
+          servedBytes+=part.length; res.writeHead(206, { 'Content-Range': 'bytes '+first+'-'+last+'/'+bytes.length, 'Accept-Ranges':'bytes', 'Content-Length':part.length }); res.end(part);
+        } else {
+          servedBytes+=bytes.length; res.writeHead(200, { 'Content-Length':bytes.length }); res.end(bytes);
+        }
       } else { res.writeHead(404); res.end(); }
     });
     server.on('connection', socket => { sockets.add(socket); socket.on('close', () => sockets.delete(socket)); });
@@ -242,12 +253,17 @@ async function smokeUpdater() {
     const { createUpdater } = require('./updater');
     const updates = createUpdater({ updater: autoUpdater, app, arch, backupBeforeInstall: async () => {}, notify: () => {}, setWindowEnabled: () => {} });
     autoUpdater.setFeedURL({ provider: 'generic', url: 'http://127.0.0.1:' + server.address().port + '/', channel: 'latest-' + arch, useMultipleRangeRequest: false });
-    const bounded = (p, label) => Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(new Error(label + ' timed out')), 20000))]);
+    const cfg = await autoUpdater.configOnDisk.value;
+    const cache = path.join(process.env.LOCALAPPDATA, cfg.updaterCacheDirName || app.getName());
+    fs.mkdirSync(cache, { recursive: true });
+    fs.copyFileSync(installer, path.join(cache, 'installer.exe'));
+    const bounded = (p, label) => Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(new Error(label + ' timed out')), 30000))]);
     const checked = await bounded(updates.check(), 'update check');
     if (checked.phase !== 'available') throw new Error('check: ' + checked.phase + ' ' + (checked.error || ''));
     const downloaded = await bounded(updates.download(), 'update download');
     if (downloaded.phase !== 'downloaded') throw new Error('download: ' + downloaded.phase + ' ' + (downloaded.error || ''));
-    return { checked: checked.phase, downloaded: downloaded.phase };
+    if (servedBytes >= bytes.length) throw new Error('differential download fell back to the full installer');
+    return { checked: checked.phase, downloaded: downloaded.phase, installerBytes: bytes.length, transferredBytes: servedBytes };
   } finally {
     if (server) { for (const socket of sockets) socket.destroy(); await new Promise(resolve => server.close(resolve)); }
     if (oldLocal === undefined) delete process.env.LOCALAPPDATA; else process.env.LOCALAPPDATA = oldLocal;
