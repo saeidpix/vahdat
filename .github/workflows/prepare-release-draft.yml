@@ -1,0 +1,39 @@
+name: Prepare experimental release draft
+on:
+  push:
+    branches: [codex/prepare-release-1-0-3]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: setup
+          run-id: 43634608446
+          github-token: ${{ github.token }}
+          path: release-assets
+      - name: Create draft for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.0.3 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v1.0.3 already exists; refusing to replace its assets."
+            exit 1
+          fi
+          test -f release-assets/Barresan-Setup-1.0.3-x64.exe
+          test -f release-assets/Barresan-Setup-1.0.3-ia32.exe
+          test -f release-assets/Barresan-Setup-1.0.3-x64.exe.blockmap
+          test -f release-assets/Barresan-Setup-1.0.3-ia32.exe.blockmap
+          test -f release-assets/latest-x64.yml
+          test -f release-assets/latest-ia32.yml
+          gh release create v1.0.3 release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target f6df0d5bed0a265fb6256c2c323b8bdc6381c251 \
+            --draft \
+            --title "Barresan 1.0.3 — experimental draft" \
+            --notes "Draft for review only. Test installation over the previous version and real update flow before publication. The installers are not digitally signed."
