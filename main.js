@@ -23,6 +23,8 @@ app.setPath('userData', SMOKE ? fs.mkdtempSync(path.join(os.tmpdir(), 'avsmoke-'
 let store, win, backupBusy = false;
 const dbPath = () => path.join(app.getPath('userData'), 'autobenz.db');
 const settingsPath = () => path.join(app.getPath('userData'), 'backup-settings.json');
+const upgradeDir = () => path.join(app.getPath('userData'), 'upgrade-backups');
+const versionPath = () => path.join(app.getPath('userData'), 'data-version.json');
 // Highest waybill number ever issued, kept outside the database: after restoring an older backup the numbers issued
 // since that backup must not be handed out again.
 const SEQ_KEY = 'autobenz-preview-waybill-sequence-v13';
@@ -99,7 +101,29 @@ function backupState() {
   const root = p => path.parse(path.resolve(p)).root.toLowerCase();
   const due = Math.max(3 * s.intervalMinutes * 60000, 24 * 3600000);
   const warn = s.enabled ? ((s.lastErrorAt && s.lastErrorAt > (s.lastOk || 0)) ? 'error' : (s.lastOk && Date.now() - s.lastOk > due ? 'stale' : '')) : 'off';
-  return { settings: s, warn, list: backup.list(s.dir), sameDrive: root(s.dir) === root(dbPath()), dbPath: dbPath() };
+  return { settings: s, warn, list: [...backup.list(s.dir), ...backup.list(upgradeDir())].sort((a,b) => b.time-a.time), upgradeDir: upgradeDir(), sameDrive: root(s.dir) === root(dbPath()), dbPath: dbPath() };
+}
+
+// Before an updated app can change existing data, keep and verify a recoverable snapshot.
+async function protectUpgrade(hadDatabase) {
+  const version = app.getVersion();
+  let previous = '';
+  try { previous = JSON.parse(fs.readFileSync(versionPath(), 'utf8')).version || ''; } catch (_) {}
+  if (previous === version) return;
+  if (hadDatabase) {
+    const dir = upgradeDir();
+    fs.mkdirSync(dir, { recursive: true });
+    const saved = await backup.makeBackup(store, dir, 'pre-upgrade');
+    const testPath = path.join(dir, 'verify-' + process.pid + '.db');
+    const restored = await backup.unpackForRestore(saved.file, testPath, Database);
+    fs.unlinkSync(restored);
+    for (const file of [seqPath(), settingsPath()]) {
+      if (fs.existsSync(file)) fs.copyFileSync(file, path.join(dir, path.basename(file) + '-before-' + version));
+    }
+  }
+  const temp = versionPath() + '.tmp';
+  fs.writeFileSync(temp, JSON.stringify({ version }));
+  fs.renameSync(temp, versionPath());
 }
 
 function registerIpc() {
@@ -134,7 +158,7 @@ function registerIpc() {
   ipcMain.handle('backup:restore', async (_e, file) => {
     const s = readSettings();
     const resolved = path.resolve(file);
-    if (path.dirname(resolved) !== path.resolve(s.dir) || !/\.db\.gz$/.test(resolved)) return { ok: false, error: 'فایل بکاپ معتبر نیست.' };
+    if (![path.resolve(s.dir), path.resolve(upgradeDir())].includes(path.dirname(resolved)) || !/\.db\.gz$/.test(resolved)) return { ok: false, error: 'فایل بکاپ معتبر نیست.' };
     try {
       const tmp = await backup.unpackForRestore(resolved, dbPath(), Database);
       const pre = await runBackup('pre-restore');
@@ -186,7 +210,16 @@ async function smoke() {
     __mark('after-backup');
     const tmp = await backup.unpackForRestore(b.file, path.join(app.getPath('userData'), 'r.db'), Database);
     const s2 = new Store(tmp, Database); out.restoredRows = JSON.parse(s2.getAll()['autobenz-preview-waybills-v2']).length; s2.close();
-    out.ok = out.drivePick === 'D:' && out.rows === 2001 && out.firstId === '2001' && out.kv === 'v' && b.ok && out.restoredRows === 2001;
+    await protectUpgrade(true);
+    const upgradeSnapshots = backup.list(upgradeDir());
+    out.upgradeBackupCount = upgradeSnapshots.length;
+    const upgradeCopy = await backup.unpackForRestore(upgradeSnapshots[0].file, path.join(app.getPath('userData'), 'upgrade-check.db'), Database);
+    const s3 = new Store(upgradeCopy, Database);
+    out.upgradeRestoredRows = JSON.parse(s3.getAll()['autobenz-preview-waybills-v2']).length;
+    s3.close(); fs.unlinkSync(upgradeCopy);
+    out.versionMarker = JSON.parse(fs.readFileSync(versionPath(), 'utf8')).version;
+    out.ok = out.drivePick === 'D:' && out.rows === 2001 && out.firstId === '2001' && out.kv === 'v' && b.ok && out.restoredRows === 2001
+      && out.upgradeBackupCount === 1 && out.upgradeRestoredRows === 2001 && out.versionMarker === app.getVersion();
   } catch (e) { out.ok = false; out.error = String(e && e.stack || e); }
   console.log('SMOKE_RESULT ' + JSON.stringify(out));
   if (process.env.SMOKE_OUT) { try { fs.writeFileSync(process.env.SMOKE_OUT, JSON.stringify(out)); } catch (_) {} }
@@ -195,9 +228,16 @@ async function smoke() {
 }
 
 if (!SMOKE && !app.requestSingleInstanceLock()) app.quit();
-else app.whenReady().then(() => {
+else app.whenReady().then(async () => {
+  const hadDatabase = fs.existsSync(dbPath());
   store = new Store(dbPath(), Database);
   if (SMOKE) return smoke();
+  try { await protectUpgrade(hadDatabase); }
+  catch (e) {
+    dialog.showErrorBox('باررسان', 'پشتیبان ایمنی پیش از به‌روزرسانی ساخته یا بررسی نشد؛ برنامه برای محافظت از اطلاعات باز نمی‌شود. فضای دیسک و دسترسی پوشه اطلاعات را بررسی کنید.\n\n' + String(e && e.message || e));
+    try { store.close(); } catch (_) {}
+    app.exit(1); return;
+  }
   applySeqGuard(); registerIpc(); createWindow(); autoBackupDir().catch(() => {}); schedule();
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 });

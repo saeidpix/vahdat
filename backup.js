@@ -28,6 +28,7 @@ function prune(dir, now = Date.now()) {
   const files = list(dir), day = 86400000, keep = new Set(), perDay = new Set();
   for (const f of files) {
     const age = now - f.time;
+    if (f.tag === 'pre-upgrade') { keep.add(f.name); continue; }
     if (age <= 2 * day) { keep.add(f.name); continue; }
     if (age > 30 * day) continue;
     if (f.tag) { keep.add(f.name); continue; }

@@ -1306,6 +1306,9 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
           <div class="v18-print-fixed"><strong>قالب ثابت بارنامه</strong><span>A4 عمودی</span><span>۳ نسخه: بار، مشتری، مقصد</span><span>QR روی هر سه نسخه</span></div>
           <div class="sm-card v18-settings-card"><div class="sm-card-head"><div><h5>ظاهر برگه چاپ</h5><p>فونت فقط از فونت‌های نصب‌شده روی ویندوز انتخاب می‌شود.</p></div></div>
              <div class="v18-settings-grid">
+               <label class="v18-select-field" for="v18PrintLayout">طرح چاپ
+                 <select id="v18PrintLayout"><option value="classic">طرح فعلی</option><option value="large">درشت و خوانا</option><option value="grid">درشت و جدولی</option></select>
+               </label>
                <label class="v18-select-field" for="v18PrintFont">فونت چاپ
                  <select id="v18PrintFont"><option value="B Titr">B Titr (پیش‌فرض)</option><option value="B Nazanin">B Nazanin</option><option value="B Mitra">B Mitra</option><option value="B Yekan">B Yekan</option><option value="Tahoma">Tahoma</option></select>
                </label>
@@ -1373,7 +1376,7 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
 <div class="v16-preview-overlay" id="v16PreviewOverlay" hidden dir="rtl" role="dialog" aria-modal="true" aria-labelledby="v16PreviewTitle">
   <div class="v16-preview-head"><div><strong id="v16PreviewTitle">پیش‌نمایش چاپ A4 — سه نسخه</strong><span>نسخه بار · نسخه مشتری · نسخه مقصد</span></div><div class="v16-row-buttons"><button class="v16-outline" id="v16ClosePreview" type="button">بازگشت</button><button class="v16-primary" type="button" id="v16PrintNow">چاپ روی کاغذ A4</button></div></div>
   <div class="v16-preview-paper" id="v16PreviewPaper"></div>
-  <div class="v16-preview-note">در پنجره‌ی چاپ، اندازه A4، حالت عمودی و مقیاس ۱۰۰٪ را انتخاب کنید.</div>
+  <div class="v16-preview-note" id="v16PreviewNote">در پنجره‌ی چاپ، اندازه A4، حالت عمودی و مقیاس ۱۰۰٪ را انتخاب کنید.</div>
 </div>
 
 <div id="v23History" hidden dir="rtl" role="dialog" aria-modal="true" aria-labelledby="v23HistTitle"><div class="v23-hist-card"><div class="v23-hist-head"><h3 id="v23HistTitle">گزارش بارنامه‌های قبلی</h3><button type="button" class="v16-outline" id="v23HistClose">بستن</button></div><input id="v23HistSearch" type="search" autocomplete="off" spellcheck="false" placeholder="جستجو با شماره، نام، موبایل، مقصد یا وضعیت" aria-label="جستجو در بارنامه‌های قبلی"/><div class="v23-small" id="v23HistCount"></div><div style="overflow:auto"><table><thead><tr><th>شماره</th><th>تاریخ</th><th>فرستنده</th><th>گیرنده</th><th>مقصد</th><th>جمع کل</th><th>وضعیت</th><th>چاپ</th></tr></thead><tbody id="v23HistBody"></tbody></table></div><div class="v23-small">این گزارش فقط برای مشاهده و چاپ مجدد است؛ ویرایش بارنامه ثبت‌شده انجام نمی‌شود.</div></div></div>
@@ -2650,7 +2653,7 @@ const safeWrite=(key,v)=>{try{localStorage.setItem(key,JSON.stringify(v));return
 const shamsi=dt=>new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit'}).format(dt);
 const fmtNum=n=>new Intl.NumberFormat(prefs.digits==='fa'?'fa-IR':'en-US',{maximumFractionDigits:0}).format(Number(n)||0);
 const digits=s=>prefs.digits==='fa'?fa(s):en(s);
-let prefs={font:'Vazirmatn',fontCustom:'',showPackageQuantity:false,showPackageWeight:false,digits:'fa',refresh:'0',print:'manual',storageRate:0,printFont:'B Titr',printFontSize:12,printMargin:4.5,printLogo:true,printCut:true,printSignature:false,packageTitleMode:'select',showHistoryButton:true,companyPercent:50,keeperStoragePercent:0,...safeRead(prefsKey,{})};
+let prefs={font:'Vazirmatn',fontCustom:'',showPackageQuantity:false,showPackageWeight:false,digits:'fa',refresh:'0',print:'manual',storageRate:0,printFont:'B Titr',printLayout:'classic',printFontSize:12,printMargin:4.5,printLogo:true,printCut:true,printSignature:false,packageTitleMode:'select',showHistoryButton:true,companyPercent:50,keeperStoragePercent:0,...safeRead(prefsKey,{})};
 let destinations=Array.isArray(safeRead(destKey,[]))?safeRead(destKey,[]):[];
 let packageTitles=Array.isArray(safeRead(packageTitlesKey,[]))?safeRead(packageTitlesKey,[]):[];
 let inactiveTitles=Array.isArray(safeRead(inactiveTitlesKey,[]))?safeRead(inactiveTitlesKey,[]):[];
@@ -2902,6 +2905,8 @@ function v18ApplyPrintStyle(){
  const innerWidth=210-2*margin, innerHeight=297-2*margin-1;
  const slip=(innerHeight-1.6)/3, step=slip+0.8;
  const scale=size/12;
+ const layout=['large','grid'].includes(prefs.printLayout)?prefs.printLayout:'classic';
+ const enlarged=layout==='classic'?1:1.4;
  const fontCSS=JSON.stringify(font);
  const css=`
  @page{size:A4 portrait;margin:${margin}mm}
@@ -2912,10 +2917,23 @@ function v18ApplyPrintStyle(){
  .v16-ticket{font-size:${(8.8*scale).toFixed(2)}pt!important}
  .v16-company b{font-size:${(13.5*scale).toFixed(2)}pt!important}
  .v16-header-meta> b{font-size:${(9*scale).toFixed(2)}pt!important}
- .v16-cell strong{font-size:${(7.6*scale).toFixed(2)}pt!important}
- .v16-cell{font-size:${(7.6*scale).toFixed(2)}pt!important}
- .v16-line strong{font-size:${(8*scale).toFixed(2)}pt!important}
- .v16-fee strong{font-size:${(9*scale).toFixed(2)}pt!important}
+ .v16-cell strong{font-size:${(7.6*scale*enlarged).toFixed(2)}pt!important}
+ .v16-cell{font-size:${(7.6*scale*enlarged).toFixed(2)}pt!important}
+ .v16-line strong{font-size:${(8*scale*enlarged).toFixed(2)}pt!important}
+ .v16-fee strong{font-size:${(9*scale*enlarged).toFixed(2)}pt!important}
+ /* Larger layouts keep every field and compact decorative spacing. */
+ .v16-layout-large .v16-ticket,.v16-layout-grid .v16-ticket{padding:1.3mm 2mm!important;line-height:1.2!important}
+ .v16-layout-large .v16-content-grid,.v16-layout-grid .v16-content-grid{margin-top:.8mm!important;gap:1mm!important}
+ .v16-layout-large .v16-doc-main,.v16-layout-grid .v16-doc-main{gap:.6mm!important}
+ .v16-layout-large .v16-cell,.v16-layout-grid .v16-cell{line-height:1.2!important}
+ .v16-layout-large .v16-cell>span,.v16-layout-grid .v16-cell>span{font-size:8.5pt!important}
+ .v16-layout-large .v16-party,.v16-layout-grid .v16-party{padding:.6mm 1mm!important}
+ .v16-layout-large .v16-line,.v16-layout-grid .v16-line{padding:.5mm 1mm!important;line-height:1.2!important}
+ .v16-layout-large .v16-fee,.v16-layout-grid .v16-fee{padding:.5mm .4mm!important;line-height:1.2!important}
+ .v16-layout-grid .v16-ticket{border:1px solid #222!important;border-radius:0!important}
+ .v16-layout-grid .v16-party,.v16-layout-grid .v16-line,.v16-layout-grid .v16-fee{border-color:#333!important;border-radius:0!important}
+ .v16-layout-grid .v16-route-line,.v16-layout-grid .v16-fee:last-child{background:#eee!important}
+ .v16-layout-grid:not(.v18-no-cut) .v16-ticket:not(:last-child){border-bottom:1.5px dashed #333!important}
  .v16-print-sheet.v18-no-cut .v16-ticket:not(:last-child){border-bottom:1px solid #a5b1bf!important}
  @media print{
  #printArea{width:${innerWidth}mm!important;height:${innerHeight}mm!important}
@@ -2950,6 +2968,17 @@ function v16PrintTicket(rec,role,qrHtml){
   ${signatureMarkup}
  </article>`;
 }
+async function v16CheckPrintFits(html){
+ if(document.fonts && document.fonts.ready) await document.fonts.ready;
+ const box=document.createElement('div');
+ box.style.cssText='position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none;z-index:-1';
+ box.innerHTML=html;document.body.appendChild(box);
+ try{
+  await Promise.all(Array.from(box.querySelectorAll('img')).map(img=>img.decode?img.decode().catch(()=>{}):Promise.resolve()));
+  const fields=box.querySelectorAll('.v16-ticket,.v16-doc-main,.v16-party,.v16-cell strong,.v16-line strong,.v16-fee,.v16-header-meta');
+  return Array.from(fields).every(el=>el.scrollHeight<=el.clientHeight+2 && el.scrollWidth<=el.clientWidth+2);
+ }finally{box.remove()}
+}
 async function printWaybill(rec,silent=false){
  if(waybillPrintBusy)return false;
  if(!rec||!/^[1-9]\d*$/.test(String(rec.id||''))){toast('ابتدا بارنامه را ثبت کن تا شماره معتبر و QR قابل بازیابی صادر شود.');return false}
@@ -2958,8 +2987,10 @@ async function printWaybill(rec,silent=false){
   v18ApplyPrintStyle();
   const payload=await v16EncodeQr(rec);
   const svg=v16QrSvg(payload);
-  const html=`<div class="v16-print-sheet ${prefs.printCut===false?'v18-no-cut':''}" dir="rtl">${['نسخه مخصوص بار','نسخه مخصوص مشتری','نسخه مخصوص مقصد'].map(r=>v16PrintTicket(rec,r,svg)).join('')}</div>`;
+  const html=`<div class="v16-print-sheet v16-layout-${['large','grid'].includes(prefs.printLayout)?prefs.printLayout:'classic'} ${prefs.printCut===false?'v18-no-cut':''}" dir="rtl">${['نسخه مخصوص بار','نسخه مخصوص مشتری','نسخه مخصوص مقصد'].map(r=>v16PrintTicket(rec,r,svg)).join('')}</div>`;
   document.getElementById('printArea').innerHTML=html;
+  const fits=await v16CheckPrintFits(html);
+  if(silent && !fits)throw new Error('اطلاعات در طرح انتخابی جا نمی‌شود؛ برای جلوگیری از ناقص‌شدن، طرح کوچک‌تر یا فونت کوچک‌تر را انتخاب کنید.');
   if(silent){
    if(!window.autobenzDesktop || !window.autobenzDesktop.printWaybillSilent) throw new Error('چاپ مستقیم فقط در نسخه ویندوز برنامه در دسترس است.');
    if(document.fonts && document.fonts.ready) await document.fonts.ready;
@@ -2969,6 +3000,8 @@ async function printWaybill(rec,silent=false){
    return true;
   }
   document.getElementById('v16PreviewPaper').innerHTML=html;
+  document.getElementById('v16PrintNow').disabled=!fits;
+  document.getElementById('v16PreviewNote').textContent=fits?'در پنجره‌ی چاپ، اندازه A4، حالت عمودی و مقیاس ۱۰۰٪ را انتخاب کنید.':'اطلاعات در این طرح جا نمی‌شود؛ برای چاپ کامل، طرح کوچک‌تر یا فونت کوچک‌تر را انتخاب کنید.';
   document.getElementById('v16PreviewOverlay').hidden=false;
   document.body.classList.add('v16-preview-mode');
   window.__v16LastPayload=payload;window.__v16LastPrint=rec;
@@ -3086,7 +3119,7 @@ renderDestinations();renderPackageTitles();blankForm();applySettings();renderDas
     {id:'dashboard',title:'داشبورد',description:'زمان‌بندی به‌روزرسانی داشبورد.',search:'داشبورد گزارش به روز رسانی بروزرسانی تازه سازی رفرش'},
     {id:'users',title:'کاربران و دسترسی',description:'تعریف کاربر با نام کاربری و رمز عبور و انتخاب قابلیت‌های مجاز برای هر کاربر.',search:'کاربر کاربران رمز پسورد نام کاربری دسترسی مجوز ورود مدیر'}
   ];
-  const labels=['fontChoice','customFontName','digitChoice','refreshChoice','printChoice','storageRateSetting','showPackageQuantity','showPackageWeight','v18PrintFont','v18PrintFontSize','v18PrintMargin','v18PrintLogo','v18PrintCut','v18PrintSignature','v21ReadySortSetting','v23PackageMode','v23ShowHistory','v23CompanyPercent','v23KeeperStoragePercent'];
+  const labels=['fontChoice','customFontName','digitChoice','refreshChoice','printChoice','storageRateSetting','showPackageQuantity','showPackageWeight','v18PrintLayout','v18PrintFont','v18PrintFontSize','v18PrintMargin','v18PrintLogo','v18PrintCut','v18PrintSignature','v21ReadySortSetting','v23PackageMode','v23ShowHistory','v23CompanyPercent','v23KeeperStoragePercent'];
   let draft=null, snapshot='', activeTab='overview', restoreFocus=null, editingRoute=null, editingTitle=null, editingCustomerCode=null;
   const routePairsKey='autobenz-preview-route-pairs-v20';
   const readRoutePairs=()=>{const a=safeRead(routePairsKey,[]);return Array.isArray(a)?a.filter(p=>p&&typeof p.a==='string'&&typeof p.b==='string'&&p.a!==p.b).map(p=>({a:p.a,b:p.b,enabled:p.enabled!==false})):[]};
@@ -3139,6 +3172,7 @@ renderDestinations();renderPackageTitles();blankForm();applySettings();renderDas
     q('refreshChoice').value=draft.prefs.refresh;
     q('v21ReadySortSetting').value=draft.prefs.handoffReadySort==='newest'?'newest':'oldest';
     q('printChoice').value=draft.prefs.print||'manual';
+    q('v18PrintLayout').value=['classic','large','grid'].includes(draft.prefs.printLayout)?draft.prefs.printLayout:'classic';
     q('v18PrintFont').value=draft.prefs.printFont||'B Titr';
     q('v18PrintFontSize').value=String(draft.prefs.printFontSize||12);
     q('v18PrintMargin').value=String(draft.prefs.printMargin||4.5);
@@ -3165,6 +3199,7 @@ renderDestinations();renderPackageTitles();blankForm();applySettings();renderDas
     draft.prefs.refresh=q('refreshChoice').value;
     draft.prefs.handoffReadySort=q('v21ReadySortSetting').value==='newest'?'newest':'oldest';
     draft.prefs.print=q('printChoice').value;
+    draft.prefs.printLayout=q('v18PrintLayout').value;
     draft.prefs.printFont=q('v18PrintFont').value;
     draft.prefs.printFontSize=Number(q('v18PrintFontSize').value)||12;
     draft.prefs.printMargin=Number(q('v18PrintMargin').value)||4.5;
@@ -3462,7 +3497,7 @@ renderDestinations();renderPackageTitles();blankForm();applySettings();renderDas
     if(id==='storageRateSetting')q(id).value=fmt(Math.min(maxMoney,Number(numeric(q(id).value)||0)));
     readControls();
   }));
-  ['fontChoice','digitChoice','refreshChoice','printChoice','v18PrintFont','v18PrintFontSize','v18PrintMargin','v21ReadySortSetting'].forEach(id=>q(id).addEventListener('change',readControls));
+  ['fontChoice','digitChoice','refreshChoice','printChoice','v18PrintLayout','v18PrintFont','v18PrintFontSize','v18PrintMargin','v21ReadySortSetting'].forEach(id=>q(id).addEventListener('change',readControls));
   panel.onclick=null; // remove V7 backdrop handler before attaching the staged-editor handler
   panel.addEventListener('click',e=>{if(e.target===panel)close()});
   panel.addEventListener('keydown',e=>{
@@ -4495,11 +4530,11 @@ window.v16DecodeQr=fromQR;
      <div class="v24-f"><label for="v24bInt">فاصله‌ی بکاپ</label><select id="v24bInt">${[[15,'هر ۱۵ دقیقه'],[30,'هر ۳۰ دقیقه'],[60,'هر ساعت'],[120,'هر ۲ ساعت'],[240,'هر ۴ ساعت'],[720,'هر ۱۲ ساعت'],[1440,'روزی یک بار']].map(([v,t])=>`<option value="${v}" ${v===s.intervalMinutes?'selected':''}>${t}</option>`).join('')}</select></div>
      <div class="v24-f"><label for="v24bOn">بکاپ خودکار</label><select id="v24bOn"><option value="1" ${s.enabled?'selected':''}>روشن</option><option value="0" ${s.enabled?'':'selected'}>خاموش</option></select></div>
     </div>
-    <div class="v24-info" style="margin-top:14px">آخرین بکاپ موفق: <b>${esc(last)}</b><br>محل دیتابیس: <span dir="ltr">${esc(st.dbPath)}</span></div>
+    <div class="v24-info" style="margin-top:14px">آخرین بکاپ موفق: <b>${esc(last)}</b><br>پوشه پشتیبان ارتقا: <span dir="ltr">${esc(st.upgradeDir)}</span><br>محل دیتابیس: <span dir="ltr">${esc(st.dbPath)}</span></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="v24-btn" type="button" id="v24bRun">بکاپ همین حالا</button></div>
     <div class="v24-msg ${err?'err':'ok'}" id="v24bMsg">${esc(msg||'')}</div>
     <h5 style="margin:22px 0 4px;font-size:18px">بکاپ‌های موجود (${st.list.length})</h5>
-    <div class="v24-rows">${st.list.length?st.list.map(x=>`<div class="v24-row"><span><b>${esc(fmtDate(x.time))}</b> ${x.tag?'<small>('+esc({manual:'دستی','pre-restore':'قبل از بازگردانی'}[x.tag]||x.tag)+')</small>':''}<br><small>${esc(fmtSize(x.size))}</small></span><button class="v24-btn warn" type="button" data-restore="${esc(x.file)}">بازگردانی</button></div>`).join(''):'<small>هنوز بکاپی وجود ندارد.</small>'}</div>`;
+    <div class="v24-rows">${st.list.length?st.list.map(x=>`<div class="v24-row"><span><b>${esc(fmtDate(x.time))}</b> ${x.tag?'<small>('+esc({manual:'دستی','pre-restore':'قبل از بازگردانی','pre-upgrade':'قبل از به‌روزرسانی'}[x.tag]||x.tag)+')</small>':''}<br><small>${esc(fmtSize(x.size))}</small></span><button class="v24-btn warn" type="button" data-restore="${esc(x.file)}">بازگردانی</button></div>`).join(''):'<small>هنوز بکاپی وجود ندارد.</small>'}</div>`;
    const msgEl=$('v24bMsg');
    $('v24bChoose').onclick=async()=>{const d=await api.backupChoose();if(d){await api.backupSet({dir:d});render('پوشه‌ی بکاپ تغییر کرد.')}};
    $('v24bInt').onchange=async e=>{await api.backupSet({intervalMinutes:+e.target.value});render('ذخیره شد.')};
