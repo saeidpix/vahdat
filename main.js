@@ -7,7 +7,7 @@ let Database;
 try { Database = require('better-sqlite3'); __mark('required'); }
 catch (e) {
   if (process.argv.includes('--smoke') && process.env.SMOKE_OUT) { try { require('fs').writeFileSync(process.env.SMOKE_OUT, JSON.stringify({ ok: false, arch: process.arch, error: 'sqlite module: ' + String(e && e.message || e) })); } catch (_) {} process.exit(1); }
-  require('electron').dialog.showErrorBox('سامانه بارنامه', 'بخش ذخیره‌سازی برنامه بارگذاری نشد. برنامه را دوباره نصب کنید.\n\n' + String(e && e.message || e)); process.exit(1);
+  require('electron').dialog.showErrorBox('باررسان', 'بخش ذخیره‌سازی برنامه بارگذاری نشد. برنامه را دوباره نصب کنید.\n\n' + String(e && e.message || e)); process.exit(1);
 }
 const { Store } = require('./storage');
 const backup = require('./backup');
@@ -17,11 +17,14 @@ const SMOKE = process.argv.includes('--smoke');
 app.disableHardwareAcceleration();
 // 32-bit build: keep graphics inside the main process. On machines without a usable graphics driver the separate GPU process of the 32-bit build fails to start and takes the whole program down.
 if (process.arch === 'ia32') app.commandLine.appendSwitch('in-process-gpu');
-if (SMOKE) app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'avsmoke-')));
+// Keep existing installations' database path stable when the visible product name changes.
+app.setPath('userData', SMOKE ? fs.mkdtempSync(path.join(os.tmpdir(), 'avsmoke-')) : path.join(app.getPath('appData'), 'Barnameh'));
 
 let store, win, backupBusy = false;
 const dbPath = () => path.join(app.getPath('userData'), 'autobenz.db');
 const settingsPath = () => path.join(app.getPath('userData'), 'backup-settings.json');
+const upgradeDir = () => path.join(app.getPath('userData'), 'upgrade-backups');
+const versionPath = () => path.join(app.getPath('userData'), 'data-version.json');
 // Highest waybill number ever issued, kept outside the database: after restoring an older backup the numbers issued
 // since that backup must not be handed out again.
 const SEQ_KEY = 'autobenz-preview-waybill-sequence-v13';
@@ -98,17 +101,66 @@ function backupState() {
   const root = p => path.parse(path.resolve(p)).root.toLowerCase();
   const due = Math.max(3 * s.intervalMinutes * 60000, 24 * 3600000);
   const warn = s.enabled ? ((s.lastErrorAt && s.lastErrorAt > (s.lastOk || 0)) ? 'error' : (s.lastOk && Date.now() - s.lastOk > due ? 'stale' : '')) : 'off';
-  return { settings: s, warn, list: backup.list(s.dir), sameDrive: root(s.dir) === root(dbPath()), dbPath: dbPath() };
+  return { settings: s, warn, list: [...backup.list(s.dir), ...backup.list(upgradeDir())].sort((a,b) => b.time-a.time), upgradeDir: upgradeDir(), sameDrive: root(s.dir) === root(dbPath()), dbPath: dbPath() };
+}
+
+// Before an updated app can change existing data, keep and verify a recoverable snapshot.
+async function protectUpgrade(hadDatabase) {
+  const version = app.getVersion();
+  let previous = '';
+  try { previous = JSON.parse(fs.readFileSync(versionPath(), 'utf8')).version || ''; } catch (_) {}
+  if (previous === version) return;
+  if (hadDatabase) {
+    const dir = upgradeDir();
+    fs.mkdirSync(dir, { recursive: true });
+    const saved = await backup.makeBackup(store, dir, 'pre-upgrade');
+    const testPath = path.join(dir, 'verify-' + process.pid + '.db');
+    const restored = await backup.unpackForRestore(saved.file, testPath, Database);
+    fs.unlinkSync(restored);
+    for (const file of [seqPath(), settingsPath()]) {
+      if (fs.existsSync(file)) fs.copyFileSync(file, path.join(dir, path.basename(file) + '-before-' + version));
+    }
+  }
+  const temp = versionPath() + '.tmp';
+  fs.writeFileSync(temp, JSON.stringify({ version }));
+  fs.renameSync(temp, versionPath());
+}
+
+async function backupBeforeUpdate() {
+  if (backupBusy) throw new Error('پشتیبان دیگری در حال اجراست؛ دوباره تلاش کنید.');
+  backupBusy = true;
+  try {
+    const dir = upgradeDir();
+    fs.mkdirSync(dir, { recursive: true });
+    const saved = await backup.makeBackup(store, dir, 'pre-update');
+    const verified = await backup.unpackForRestore(saved.file, path.join(dir, 'update-check-' + process.pid + '.db'), Database);
+    fs.unlinkSync(verified);
+    for (const file of [seqPath(), settingsPath()]) {
+      if (fs.existsSync(file)) fs.copyFileSync(file, path.join(dir, path.basename(file) + '-before-update-' + app.getVersion()));
+    }
+  } finally { backupBusy = false; }
 }
 
 function registerIpc() {
+  const { createUpdater } = require('./updater');
+  const { autoUpdater } = require('electron-updater');
+  const updates = createUpdater({
+    updater: autoUpdater, app, arch: process.arch, backupBeforeInstall: backupBeforeUpdate,
+    setWindowEnabled: enabled => { if (win && !win.isDestroyed()) win.setEnabled(enabled); },
+    notify: state => { if (win && !win.isDestroyed()) win.webContents.send('updates:state', state); }
+  });
+  const validUpdateSender = e => win && e.sender === win.webContents;
+  ipcMain.handle('updates:state', e => validUpdateSender(e) ? updates.getState() : null);
+  ipcMain.handle('updates:check', e => validUpdateSender(e) ? updates.check() : null);
+  ipcMain.handle('updates:download', e => validUpdateSender(e) ? updates.download() : null);
+  ipcMain.handle('updates:install', e => validUpdateSender(e) ? updates.install() : null);
   ipcMain.on('kv:all', e => { e.returnValue = store.getAll(); });
   const fail = (e, err) => { console.error('storage', err); try { e.sender.send('kv:error', String(err && err.message || err)); } catch (_) {} };
   ipcMain.on('kv:set', (e, k, v) => { try { store.set(k, v); if (k === SEQ_KEY) guardSeq(v); } catch (err) { fail(e, err); } });
   ipcMain.on('kv:remove', (e, k) => { try { store.remove(k); } catch (err) { fail(e, err); } });
   // native, synchronous confirm/alert: avoids the Electron/Windows problem where inputs stop accepting focus after window.confirm()
-  ipcMain.on('dlg:confirm', (e, msg) => { e.returnValue = dialog.showMessageBoxSync(win, { type: 'question', buttons: ['بله', 'خیر'], defaultId: 0, cancelId: 1, noLink: true, title: 'سامانه بارنامه', message: String(msg || '') }) === 0; });
-  ipcMain.on('dlg:alert', (e, msg) => { dialog.showMessageBoxSync(win, { type: 'info', buttons: ['متوجه شدم'], noLink: true, title: 'سامانه بارنامه', message: String(msg || '') }); e.returnValue = true; });
+  ipcMain.on('dlg:confirm', (e, msg) => { e.returnValue = dialog.showMessageBoxSync(win, { type: 'question', buttons: ['بله', 'خیر'], defaultId: 0, cancelId: 1, noLink: true, title: 'باررسان', message: String(msg || '') }) === 0; });
+  ipcMain.on('dlg:alert', (e, msg) => { dialog.showMessageBoxSync(win, { type: 'info', buttons: ['متوجه شدم'], noLink: true, title: 'باررسان', message: String(msg || '') }); e.returnValue = true; });
   // Print only the app window to the Windows default printer, without a dialog.
   ipcMain.handle('waybill:print-silent', e => new Promise(resolve => {
     if (!win || e.sender !== win.webContents) return resolve({ ok: false, error: 'invalid sender' });
@@ -133,7 +185,7 @@ function registerIpc() {
   ipcMain.handle('backup:restore', async (_e, file) => {
     const s = readSettings();
     const resolved = path.resolve(file);
-    if (path.dirname(resolved) !== path.resolve(s.dir) || !/\.db\.gz$/.test(resolved)) return { ok: false, error: 'فایل بکاپ معتبر نیست.' };
+    if (![path.resolve(s.dir), path.resolve(upgradeDir())].includes(path.dirname(resolved)) || !/\.db\.gz$/.test(resolved)) return { ok: false, error: 'فایل بکاپ معتبر نیست.' };
     try {
       const tmp = await backup.unpackForRestore(resolved, dbPath(), Database);
       const pre = await runBackup('pre-restore');
@@ -154,7 +206,7 @@ function registerIpc() {
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1366, height: 820, show: false, title: 'سامانه بارنامه', autoHideMenuBar: true,
+    width: 1366, height: 820, show: false, title: 'باررسان', autoHideMenuBar: true,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: false, nodeIntegration: false, sandbox: false, spellcheck: false }
   });
@@ -164,6 +216,40 @@ function createWindow() {
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
   win.once('ready-to-show', () => { win.maximize(); win.show(); });
+}
+
+// Exercise the actual packaged updater against a local test server, without installing anything.
+async function smokeUpdater() {
+  const http = require('http'), crypto = require('crypto');
+  const bytes = Buffer.from('barresan-updater-smoke-test');
+  const hash = crypto.createHash('sha512').update(bytes).digest('base64');
+  const arch = process.arch, oldLocal = process.env.LOCALAPPDATA;
+  process.env.LOCALAPPDATA = app.getPath('userData');
+  let server;
+  try {
+    server = http.createServer((req, res) => {
+      if (req.url.startsWith('/latest-')) {
+        const url = 'http://127.0.0.1:' + server.address().port + '/Barresan-Setup-1.0.4-' + arch + '.exe';
+        const body = 'version: 1.0.4\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
+        res.writeHead(200, { 'Content-Type': 'text/yaml' }); res.end(body);
+      } else if (req.url.endsWith('.exe')) {
+        res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': bytes.length }); res.end(bytes);
+      } else { res.writeHead(404); res.end(); }
+    });
+    await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+    const { autoUpdater } = require('electron-updater');
+    const { createUpdater } = require('./updater');
+    const updates = createUpdater({ updater: autoUpdater, app, arch, backupBeforeInstall: async () => {}, notify: () => {}, setWindowEnabled: () => {} });
+    autoUpdater.setFeedURL({ provider: 'generic', url: 'http://127.0.0.1:' + server.address().port + '/', channel: 'latest-' + arch, useMultipleRangeRequest: false });
+    const checked = await updates.check();
+    if (checked.phase !== 'available') throw new Error('check: ' + checked.phase + ' ' + (checked.error || ''));
+    const downloaded = await updates.download();
+    if (downloaded.phase !== 'downloaded') throw new Error('download: ' + downloaded.phase + ' ' + (downloaded.error || ''));
+    return { checked: checked.phase, downloaded: downloaded.phase };
+  } finally {
+    if (server) await new Promise(resolve => server.close(resolve));
+    if (oldLocal === undefined) delete process.env.LOCALAPPDATA; else process.env.LOCALAPPDATA = oldLocal;
+  }
 }
 
 async function smoke() {
@@ -185,7 +271,26 @@ async function smoke() {
     __mark('after-backup');
     const tmp = await backup.unpackForRestore(b.file, path.join(app.getPath('userData'), 'r.db'), Database);
     const s2 = new Store(tmp, Database); out.restoredRows = JSON.parse(s2.getAll()['autobenz-preview-waybills-v2']).length; s2.close();
-    out.ok = out.drivePick === 'D:' && out.rows === 2001 && out.firstId === '2001' && out.kv === 'v' && b.ok && out.restoredRows === 2001;
+    await protectUpgrade(true);
+    const upgradeSnapshots = backup.list(upgradeDir());
+    out.upgradeBackupCount = upgradeSnapshots.length;
+    const upgradeCopy = await backup.unpackForRestore(upgradeSnapshots[0].file, path.join(app.getPath('userData'), 'upgrade-check.db'), Database);
+    const s3 = new Store(upgradeCopy, Database);
+    out.upgradeRestoredRows = JSON.parse(s3.getAll()['autobenz-preview-waybills-v2']).length;
+    s3.close(); fs.unlinkSync(upgradeCopy);
+    out.versionMarker = JSON.parse(fs.readFileSync(versionPath(), 'utf8')).version;
+    out.ok = out.drivePick === 'D:' && out.rows === 2001 && out.firstId === '2001' && out.kv === 'v' && b.ok && out.restoredRows === 2001
+      && out.upgradeBackupCount === 1 && out.upgradeRestoredRows === 2001 && out.versionMarker === app.getVersion();
+    await backupBeforeUpdate();
+    const preUpdate = backup.list(upgradeDir()).find(x => x.tag === 'pre-update');
+    if (!preUpdate) throw new Error('pre-update backup missing');
+    const testUpdate = await backup.unpackForRestore(preUpdate.file, path.join(app.getPath('userData'), 'pre-update-smoke.db'), Database);
+    const s4 = new Store(testUpdate, Database);
+    out.preUpdateRestoredRows = JSON.parse(s4.getAll()['autobenz-preview-waybills-v2']).length;
+    s4.close(); fs.unlinkSync(testUpdate);
+    out.ok = out.ok && out.preUpdateRestoredRows === 2001;
+    out.updaterIntegration = await smokeUpdater();
+    out.ok = out.ok && out.updaterIntegration.checked === 'available' && out.updaterIntegration.downloaded === 'downloaded';
   } catch (e) { out.ok = false; out.error = String(e && e.stack || e); }
   console.log('SMOKE_RESULT ' + JSON.stringify(out));
   if (process.env.SMOKE_OUT) { try { fs.writeFileSync(process.env.SMOKE_OUT, JSON.stringify(out)); } catch (_) {} }
@@ -194,9 +299,16 @@ async function smoke() {
 }
 
 if (!SMOKE && !app.requestSingleInstanceLock()) app.quit();
-else app.whenReady().then(() => {
+else app.whenReady().then(async () => {
+  const hadDatabase = fs.existsSync(dbPath());
   store = new Store(dbPath(), Database);
   if (SMOKE) return smoke();
+  try { await protectUpgrade(hadDatabase); }
+  catch (e) {
+    dialog.showErrorBox('باررسان', 'پشتیبان ایمنی پیش از به‌روزرسانی ساخته یا بررسی نشد؛ برنامه برای محافظت از اطلاعات باز نمی‌شود. فضای دیسک و دسترسی پوشه اطلاعات را بررسی کنید.\n\n' + String(e && e.message || e));
+    try { store.close(); } catch (_) {}
+    app.exit(1); return;
+  }
   applySeqGuard(); registerIpc(); createWindow(); autoBackupDir().catch(() => {}); schedule();
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 });

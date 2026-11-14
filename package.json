@@ -1,7 +1,7 @@
 {
   "name": "barnameh",
-  "productName": "Barnameh",
-  "version": "1.0.0",
+  "productName": "Barresan",
+  "version": "1.0.3",
   "description": "Waybill management software",
   "author": "Saeed Fadaeian",
   "main": "main.js",
@@ -14,14 +14,15 @@
   },
   "build": {
     "appId": "ir.saeidpix.barnameh",
-    "productName": "Barnameh",
+    "productName": "Barresan",
     "files": [
       "main.js",
       "preload.js",
       "storage.js",
       "backup.js",
       "app/**",
-      "build/icon.png"
+      "build/icon.png",
+      "updater.js"
     ],
     "directories": {
       "output": "dist"
@@ -37,8 +38,8 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "سامانه بارنامه",
-      "artifactName": "Barnameh-Setup-${version}-${arch}.exe",
+      "shortcutName": "باررسان",
+      "artifactName": "Barresan-Setup-${version}-${arch}.exe",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "language": "1065"
@@ -47,9 +48,16 @@
       "**/node_modules/better-sqlite3/**"
     ],
     "extraResources": [],
-    "npmRebuild": false
+    "npmRebuild": false,
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://github.com/saeidpix/vahdat/releases/latest/download/"
+      }
+    ]
   },
   "dependencies": {
-    "better-sqlite3": "9.6.0"
+    "better-sqlite3": "9.6.0",
+    "electron-updater": "6.2.0"
   }
 }
