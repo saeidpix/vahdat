@@ -15,6 +15,8 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Check print regression
         run: node tests/print-regression.js
+      - name: Check updater state machine
+        run: node tests/updater-regression.js
       - name: Build and smoke-test both installers (64-bit, then 32-bit)
         shell: pwsh
         run: |
@@ -28,6 +30,7 @@ jobs:
             npx electron-builder --win nsis "--$arch" --publish never
             if ($LASTEXITCODE -ne 0) { exit 1 }
             $d = if ($arch -eq "x64") { "win-unpacked" } else { "win-ia32-unpacked" }
+            if (-not (Test-Path "dist\$d\resources\app-update.yml")) { Write-Error "missing app-update.yml ($arch)"; exit 1 }
             $out = "$PWD\smoke-$arch.json"
             $env:SMOKE_OUT = $out
             $env:ELECTRON_ENABLE_LOGGING = "1"
@@ -44,9 +47,16 @@ jobs:
             $r = Get-Content $out | ConvertFrom-Json
             if (-not $r.ok -or $r.arch -ne $arch) { Write-Error "smoke test failed ($arch)"; exit 1 }
           }
-          Get-ChildItem dist\*.exe | Select-Object Name, Length
+          node scripts/generate-update-metadata.js dist
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem dist\*.exe, dist\*.blockmap, dist\latest-*.yml | Select-Object Name, Length
       - uses: actions/upload-artifact@v4
-        with: { name: setup, path: dist/Barresan-Setup-*.exe }
+        with:
+          name: setup
+          path: |
+            dist/Barresan-Setup-*.exe
+            dist/Barresan-Setup-*.exe.blockmap
+            dist/latest-*.yml
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: smoke-result, path: smoke-*.json }

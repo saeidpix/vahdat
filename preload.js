@@ -19,6 +19,11 @@ ipcRenderer.on('kv:error', (_e, msg) => { try { window.dispatchEvent(new CustomE
 window.autobenzDesktop = {
   isDesktop: true,
   printWaybillSilent: () => ipcRenderer.invoke('waybill:print-silent'),
+  updateState: () => ipcRenderer.invoke('updates:state'),
+  updateCheck: () => ipcRenderer.invoke('updates:check'),
+  updateDownload: () => ipcRenderer.invoke('updates:download'),
+  updateInstall: () => ipcRenderer.invoke('updates:install'),
+  onUpdateState: fn => { const listener = (_e, state) => fn(state); ipcRenderer.on('updates:state', listener); return () => ipcRenderer.removeListener('updates:state', listener); },
   backupState: () => ipcRenderer.invoke('backup:state'),
   backupSet: p => ipcRenderer.invoke('backup:set', p),
   backupChoose: () => ipcRenderer.invoke('backup:choose'),

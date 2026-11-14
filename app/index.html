@@ -4075,7 +4075,7 @@ window.v16DecodeQr=fromQR;
  function ensureLogin(){
   let ov=$('v23Login');if(ov)return ov;
   ov=document.createElement('div');ov.id='v23Login';ov.hidden=true;ov.dir='rtl';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');
-  ov.innerHTML='<form class="v23-login-card" id="v23LoginForm" autocomplete="off"><h2>ورود به باررسان</h2><small style="color:#6385a0">نسخه ۱٫۰٫۲</small><p>نام کاربری و رمز عبور را وارد کنید.</p><label for="v23LoginUser">نام کاربری</label><input id="v23LoginUser" autocomplete="off" spellcheck="false"/><label for="v23LoginPass">رمز عبور</label><input id="v23LoginPass" type="password" autocomplete="off"/><button type="submit" id="v23LoginBtn">ورود</button><div id="v23LoginMsg" role="alert"></div></form>';
+  ov.innerHTML='<form class="v23-login-card" id="v23LoginForm" autocomplete="off"><h2>ورود به باررسان</h2><small style="color:#6385a0">نسخه ۱٫۰٫۳</small><p>نام کاربری و رمز عبور را وارد کنید.</p><label for="v23LoginUser">نام کاربری</label><input id="v23LoginUser" autocomplete="off" spellcheck="false"/><label for="v23LoginPass">رمز عبور</label><input id="v23LoginPass" type="password" autocomplete="off"/><button type="submit" id="v23LoginBtn">ورود</button><div id="v23LoginMsg" role="alert"></div></form>';
   document.body.appendChild(ov);
   $('v23LoginForm').addEventListener('submit',e=>{e.preventDefault();tryLogin()});
   $('v23LoginUser').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('v23LoginPass').focus()}});
@@ -4503,7 +4503,7 @@ window.v16DecodeQr=fromQR;
     <div class="v24-f full"><label for="v24sAddr">آدرس</label><textarea id="v24sAddr" rows="2" maxlength="240"></textarea></div>
    </div>
    <div style="margin-top:16px"><button class="v24-btn" type="button" id="v24sSave">ذخیره اطلاعات شرکت</button></div><div class="v24-msg" id="v24sMsg"></div></div>
-   <div class="sm-card"><div class="sm-card-head"><div><h5>درباره برنامه</h5><p>باررسان — نسخه ۱٫۰٫۲</p></div></div>${SIGN}</div>`;
+   <div class="sm-card"><div class="sm-card-head"><div><h5>درباره برنامه</h5><p>باررسان — نسخه ۱٫۰٫۳</p></div></div>${SIGN}</div>`;
   host.appendChild(pg);
   const fill=()=>{const c=company()||{};$('v24sName').value=c.name||'';$('v24sPhone').value=c.phone||'';$('v24sOrigin').value=c.origin||'';$('v24sAddr').value=c.address||''};
   $('v24sSave').onclick=()=>{
@@ -4515,6 +4515,35 @@ window.v16DecodeQr=fromQR;
   };
   const b=addTab('company','🏢','اطلاعات شرکت','نام، تماس، آدرس، مبدأ','routes');
   b.addEventListener('click',()=>{if(!adminOnly()){window.v23Alert&&window.v23Alert('دسترسی ندارید','فقط مدیر می‌تواند اطلاعات شرکت را تغییر دهد.');return}fill();$('v24sMsg').textContent='';openTab('company','اطلاعات شرکت','نام، تماس، آدرس و شهر مبدأ')});
+ }
+
+ function buildUpdate(){
+  const host=pageHost();if(!host)return;
+  const pg=document.createElement('section');pg.className='sm-page';pg.dataset.smPage='updates';pg.hidden=true;
+  pg.innerHTML=`<div class="sm-card"><div class="sm-card-head"><div><h5>به‌روزرسانی باررسان</h5><p>در صورت انتشار نسخه جدید، بخش‌های تغییرکرده تا حد امکان دانلود می‌شوند. گاهی ممکن است دانلود کامل لازم باشد.</p></div></div>
+   <div id="v27UpdateStatus" class="v24-info" role="status">آماده بررسی.</div>
+   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+    <button type="button" class="v24-btn" id="v27Check">بررسی نسخه جدید</button>
+    <button type="button" class="v24-btn" id="v27Download" hidden>دانلود به‌روزرسانی</button>
+    <button type="button" class="v24-btn" id="v27Install" hidden>پشتیبان‌گیری و نصب</button>
+   </div><p>برای نصب، برنامه بسته و دوباره اجرا می‌شود. پیش از نصب، پشتیبان اطلاعات ساخته و بررسی می‌شود.</p></div>`;
+  host.appendChild(pg);
+  const tab=addTab('updates','⬆','به‌روزرسانی','بررسی و دانلود نسخه جدید');
+  const api=window.autobenzDesktop;let current=null;
+  function render(s){
+   if(!s)return;current=s;
+   const texts={idle:'آماده بررسی نسخه جدید.',checking:'در حال بررسی نسخه جدید…',available:'نسخه '+(s.availableVersion||'جدید')+' آماده دانلود است.',current:'برنامه به‌روز است.',downloading:'در حال دانلود: '+(s.percent||0)+'٪',downloaded:'دانلود کامل شد. برای نصب و ساخت پشتیبان آماده است.', 'backing-up':'در حال ساخت و بررسی پشتیبان ایمنی…',installing:'در حال شروع نصب به‌روزرسانی…',unsupported:'به‌روزرسانی فقط در نسخه نصب‌شده و پشتیبانی‌شده ویندوز فعال است.',error:'بررسی یا دانلود ناموفق بود؛ اینترنت و انتشار نسخه رسمی را بررسی کنید.'};
+   $('v27UpdateStatus').textContent=(texts[s.phase]||'آماده بررسی.')+(s.error?' '+s.error:'');
+   const busy=['checking','downloading','backing-up','installing'].includes(s.phase);
+   $('v27Check').disabled=busy||s.phase==='unsupported';
+   $('v27Download').hidden=s.phase!=='available';$('v27Download').disabled=busy;
+   $('v27Install').hidden=s.phase!=='downloaded';$('v27Install').disabled=busy;
+  }
+  tab.addEventListener('click',async()=>{if(!adminOnly()){window.v23Alert&&window.v23Alert('دسترسی ندارید','فقط مدیر می‌تواند برنامه را به‌روزرسانی کند.');return}openTab('updates','به‌روزرسانی','نسخه جدید، پشتیبان ایمنی و نصب');if(api&&api.updateState)render(await api.updateState());else render({phase:'unsupported'})});
+  if(api&&api.onUpdateState)api.onUpdateState(render);
+  $('v27Check').onclick=async()=>{if(api&&api.updateCheck)render(await api.updateCheck())};
+  $('v27Download').onclick=async()=>{if(api&&api.updateDownload)render(await api.updateDownload())};
+  $('v27Install').onclick=async()=>{if(!api||!api.updateInstall||!current||current.phase!=='downloaded')return;if(confirm('برنامه پیش از نصب از اطلاعات پشتیبان می‌گیرد و سپس بسته می‌شود. نصب انجام شود؟'))render(await api.updateInstall())};
  }
 
  function buildBackup(){
@@ -4541,7 +4570,7 @@ window.v16DecodeQr=fromQR;
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="v24-btn" type="button" id="v24bRun">بکاپ همین حالا</button></div>
     <div class="v24-msg ${err?'err':'ok'}" id="v24bMsg">${esc(msg||'')}</div>
     <h5 style="margin:22px 0 4px;font-size:18px">بکاپ‌های موجود (${st.list.length})</h5>
-    <div class="v24-rows">${st.list.length?st.list.map(x=>`<div class="v24-row"><span><b>${esc(fmtDate(x.time))}</b> ${x.tag?'<small>('+esc({manual:'دستی','pre-restore':'قبل از بازگردانی','pre-upgrade':'قبل از به‌روزرسانی'}[x.tag]||x.tag)+')</small>':''}<br><small>${esc(fmtSize(x.size))}</small></span><button class="v24-btn warn" type="button" data-restore="${esc(x.file)}">بازگردانی</button></div>`).join(''):'<small>هنوز بکاپی وجود ندارد.</small>'}</div>`;
+    <div class="v24-rows">${st.list.length?st.list.map(x=>`<div class="v24-row"><span><b>${esc(fmtDate(x.time))}</b> ${x.tag?'<small>('+esc({manual:'دستی','pre-restore':'قبل از بازگردانی','pre-upgrade':'پیش از اجرای نسخه جدید','pre-update':'پیش از نصب به‌روزرسانی'}[x.tag]||x.tag)+')</small>':''}<br><small>${esc(fmtSize(x.size))}</small></span><button class="v24-btn warn" type="button" data-restore="${esc(x.file)}">بازگردانی</button></div>`).join(''):'<small>هنوز بکاپی وجود ندارد.</small>'}</div>`;
    const msgEl=$('v24bMsg');
    $('v24bChoose').onclick=async()=>{const d=await api.backupChoose();if(d){await api.backupSet({dir:d});render('پوشه‌ی بکاپ تغییر کرد.')}};
    $('v24bInt').onchange=async e=>{await api.backupSet({intervalMinutes:+e.target.value});render('ذخیره شد.')};
@@ -4559,7 +4588,7 @@ window.v16DecodeQr=fromQR;
   const p=panel.querySelector('.sm-preview-label');if(p)p.textContent='نسخه ۱';
   const t=panel.querySelector('.sm-toolbar-tip');
   if(t&&t.lastChild)t.lastChild.nodeValue=window.autobenzDesktop?' ذخیره در پایگاه‌داده‌ی همین رایانه':' ذخیره در همین مرورگر';
-  const f=panel.querySelector('.sm-side-foot');if(f){f.innerHTML='<span class="sm-status-circle"></span> باررسان · نسخه ۱٫۰٫۲ <small>طراحی: سعید فداییان</small>'}
+  const f=panel.querySelector('.sm-side-foot');if(f){f.innerHTML='<span class="sm-status-circle"></span> باررسان · نسخه ۱٫۰٫۳ <small>طراحی: سعید فداییان</small>'}
   const box=panel.querySelector('.sm-preview-box');
   if(box){
    const d=window.autobenzDesktop;
@@ -4568,7 +4597,7 @@ window.v16DecodeQr=fromQR;
   }
  }
 
- if(panel){buildCompany();buildBackup();tweakSettingsLabels()}
+ if(panel){buildCompany();buildBackup();buildUpdate();tweakSettingsLabels()}
  applyCompany();
  if(!company()&&!hasUsers())showSetup();
 })();

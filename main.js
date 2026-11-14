@@ -126,7 +126,34 @@ async function protectUpgrade(hadDatabase) {
   fs.renameSync(temp, versionPath());
 }
 
+async function backupBeforeUpdate() {
+  if (backupBusy) throw new Error('پشتیبان دیگری در حال اجراست؛ دوباره تلاش کنید.');
+  backupBusy = true;
+  try {
+    const dir = upgradeDir();
+    fs.mkdirSync(dir, { recursive: true });
+    const saved = await backup.makeBackup(store, dir, 'pre-update');
+    const verified = await backup.unpackForRestore(saved.file, path.join(dir, 'update-check-' + process.pid + '.db'), Database);
+    fs.unlinkSync(verified);
+    for (const file of [seqPath(), settingsPath()]) {
+      if (fs.existsSync(file)) fs.copyFileSync(file, path.join(dir, path.basename(file) + '-before-update-' + app.getVersion()));
+    }
+  } finally { backupBusy = false; }
+}
+
 function registerIpc() {
+  const { createUpdater } = require('./updater');
+  const { autoUpdater } = require('electron-updater');
+  const updates = createUpdater({
+    updater: autoUpdater, app, arch: process.arch, backupBeforeInstall: backupBeforeUpdate,
+    setWindowEnabled: enabled => { if (win && !win.isDestroyed()) win.setEnabled(enabled); },
+    notify: state => { if (win && !win.isDestroyed()) win.webContents.send('updates:state', state); }
+  });
+  const validUpdateSender = e => win && e.sender === win.webContents;
+  ipcMain.handle('updates:state', e => validUpdateSender(e) ? updates.getState() : null);
+  ipcMain.handle('updates:check', e => validUpdateSender(e) ? updates.check() : null);
+  ipcMain.handle('updates:download', e => validUpdateSender(e) ? updates.download() : null);
+  ipcMain.handle('updates:install', e => validUpdateSender(e) ? updates.install() : null);
   ipcMain.on('kv:all', e => { e.returnValue = store.getAll(); });
   const fail = (e, err) => { console.error('storage', err); try { e.sender.send('kv:error', String(err && err.message || err)); } catch (_) {} };
   ipcMain.on('kv:set', (e, k, v) => { try { store.set(k, v); if (k === SEQ_KEY) guardSeq(v); } catch (err) { fail(e, err); } });
@@ -220,6 +247,14 @@ async function smoke() {
     out.versionMarker = JSON.parse(fs.readFileSync(versionPath(), 'utf8')).version;
     out.ok = out.drivePick === 'D:' && out.rows === 2001 && out.firstId === '2001' && out.kv === 'v' && b.ok && out.restoredRows === 2001
       && out.upgradeBackupCount === 1 && out.upgradeRestoredRows === 2001 && out.versionMarker === app.getVersion();
+    await backupBeforeUpdate();
+    const preUpdate = backup.list(upgradeDir()).find(x => x.tag === 'pre-update');
+    if (!preUpdate) throw new Error('pre-update backup missing');
+    const testUpdate = await backup.unpackForRestore(preUpdate.file, path.join(app.getPath('userData'), 'pre-update-smoke.db'), Database);
+    const s4 = new Store(testUpdate, Database);
+    out.preUpdateRestoredRows = JSON.parse(s4.getAll()['autobenz-preview-waybills-v2']).length;
+    s4.close(); fs.unlinkSync(testUpdate);
+    out.ok = out.ok && out.preUpdateRestoredRows === 2001;
   } catch (e) { out.ok = false; out.error = String(e && e.stack || e); }
   console.log('SMOKE_RESULT ' + JSON.stringify(out));
   if (process.env.SMOKE_OUT) { try { fs.writeFileSync(process.env.SMOKE_OUT, JSON.stringify(out)); } catch (_) {} }
