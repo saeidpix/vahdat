@@ -221,9 +221,9 @@ function createWindow() {
 // Exercise the real differential downloader against a local range-enabled server.
 async function smokeUpdater() {
   const http = require('http'), crypto = require('crypto');
-  const installer = process.env.SMOKE_INSTALLER;
-  if (!installer || !fs.existsSync(installer) || !fs.existsSync(installer + '.blockmap')) throw new Error('updater test installer missing');
-  const bytes = fs.readFileSync(installer), blockmap = fs.readFileSync(installer + '.blockmap');
+  const installer = process.env.SMOKE_INSTALLER, changedInstaller = process.env.SMOKE_CHANGED_INSTALLER;
+  if (!installer || !changedInstaller || !fs.existsSync(installer + '.blockmap') || !fs.existsSync(changedInstaller + '.blockmap')) throw new Error('updater test installers missing');
+  const bytes = fs.readFileSync(changedInstaller), oldBlockmap = fs.readFileSync(installer + '.blockmap'), newBlockmap = fs.readFileSync(changedInstaller + '.blockmap');
   const hash = crypto.createHash('sha512').update(bytes).digest('base64');
   const arch = process.arch, oldLocal = process.env.LOCALAPPDATA;
   process.env.LOCALAPPDATA = app.getPath('userData');
@@ -236,7 +236,8 @@ async function smokeUpdater() {
         const body = 'version: 1.0.4\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
         res.writeHead(200, { 'Content-Type': 'text/yaml' }); res.end(body);
       } else if (pathname.endsWith('.blockmap')) {
-        res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': blockmap.length }); res.end(blockmap);
+        const map = pathname.includes('/v1.0.4/') ? newBlockmap : oldBlockmap;
+        res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': map.length }); res.end(map);
       } else if (pathname.endsWith('.exe')) {
         const range = /^bytes=(\\d+)-(\\d+)$/.exec(req.headers.range || '');
         if (range) {
@@ -262,7 +263,7 @@ async function smokeUpdater() {
     if (checked.phase !== 'available') throw new Error('check: ' + checked.phase + ' ' + (checked.error || ''));
     const downloaded = await bounded(updates.download(), 'update download');
     if (downloaded.phase !== 'downloaded') throw new Error('download: ' + downloaded.phase + ' ' + (downloaded.error || ''));
-    if (servedBytes >= bytes.length) throw new Error('differential download fell back to the full installer');
+    if (servedBytes <= 0 || servedBytes >= bytes.length) throw new Error('expected a partial differential download; received ' + servedBytes + ' bytes');
     return { checked: checked.phase, downloaded: downloaded.phase, installerBytes: bytes.length, transferredBytes: servedBytes };
   } finally {
     if (server) { for (const socket of sockets) socket.destroy(); await new Promise(resolve => server.close(resolve)); }
