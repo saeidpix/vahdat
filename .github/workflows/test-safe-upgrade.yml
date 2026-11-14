@@ -1,0 +1,58 @@
+name: Test isolated installer upgrade
+on:
+  push:
+    branches: [codex/test-safe-upgrade-1-0-3]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  upgrade:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, ia32]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: setup
+          run-id: 43576427447
+          github-token: ${{ github.token }}
+          path: old
+      - uses: actions/download-artifact@v4
+        with:
+          name: setup
+          run-id: 43634608446
+          github-token: ${{ github.token }}
+          path: new
+      - name: Install old, seed data, upgrade and verify
+        shell: pwsh
+        run: |
+          $arch = "${{ matrix.arch }}"
+          $old = (Resolve-Path "old/Barresan-Setup-1.0.2-$arch.exe").Path
+          $new = (Resolve-Path "new/Barresan-Setup-1.0.3-$arch.exe").Path
+          $p = Start-Process -FilePath $old -ArgumentList '/S' -WindowStyle Hidden -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "Old installer failed: $($p.ExitCode)" }
+          python tests/upgrade_seed.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $p = Start-Process -FilePath $new -ArgumentList '/S' -WindowStyle Hidden -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "New installer failed: $($p.ExitCode)" }
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs/Barresan/Barresan.exe'
+          if (-not (Test-Path $exe)) { throw "Installed executable not found: $exe" }
+          $proc = Start-Process -FilePath $exe -ArgumentList '--in-process-gpu' -WindowStyle Hidden -PassThru
+          $marker = Join-Path $env:APPDATA 'Barnameh/data-version.json'
+          $ready = $false
+          for ($i=0; $i -lt 30; $i++) {
+            Start-Sleep -Seconds 2
+            if (Test-Path $marker) {
+              try { if ((Get-Content $marker -Raw | ConvertFrom-Json).version -eq '1.0.3') { $ready = $true; break } } catch {}
+            }
+            if ($proc.HasExited) { throw "Application exited before data protection completed: $($proc.ExitCode)" }
+          }
+          if (-not $ready) { throw 'Application did not finish data protection in time.' }
+          python tests/upgrade_verify.py
+          $checkExit = $LASTEXITCODE
+          if (-not $proc.HasExited) { $proc.CloseMainWindow() | Out-Null; Start-Sleep -Seconds 3; if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force } }
+          if ($checkExit -ne 0) { exit $checkExit }
