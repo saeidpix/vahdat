@@ -225,7 +225,7 @@ async function smokeUpdater() {
   const hash = crypto.createHash('sha512').update(bytes).digest('base64');
   const arch = process.arch, oldLocal = process.env.LOCALAPPDATA;
   process.env.LOCALAPPDATA = app.getPath('userData');
-  let server;
+  let server; const sockets = new Set();
   try {
     server = http.createServer((req, res) => {
       if (req.url.startsWith('/latest-')) {
@@ -236,18 +236,20 @@ async function smokeUpdater() {
         res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': bytes.length }); res.end(bytes);
       } else { res.writeHead(404); res.end(); }
     });
+    server.on('connection', socket => { sockets.add(socket); socket.on('close', () => sockets.delete(socket)); });
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
     const { autoUpdater } = require('electron-updater');
     const { createUpdater } = require('./updater');
     const updates = createUpdater({ updater: autoUpdater, app, arch, backupBeforeInstall: async () => {}, notify: () => {}, setWindowEnabled: () => {} });
     autoUpdater.setFeedURL({ provider: 'generic', url: 'http://127.0.0.1:' + server.address().port + '/', channel: 'latest-' + arch, useMultipleRangeRequest: false });
-    const checked = await updates.check();
+    const bounded = (p, label) => Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(new Error(label + ' timed out')), 20000))]);
+    const checked = await bounded(updates.check(), 'update check');
     if (checked.phase !== 'available') throw new Error('check: ' + checked.phase + ' ' + (checked.error || ''));
-    const downloaded = await updates.download();
+    const downloaded = await bounded(updates.download(), 'update download');
     if (downloaded.phase !== 'downloaded') throw new Error('download: ' + downloaded.phase + ' ' + (downloaded.error || ''));
     return { checked: checked.phase, downloaded: downloaded.phase };
   } finally {
-    if (server) await new Promise(resolve => server.close(resolve));
+    if (server) { for (const socket of sockets) socket.destroy(); await new Promise(resolve => server.close(resolve)); }
     if (oldLocal === undefined) delete process.env.LOCALAPPDATA; else process.env.LOCALAPPDATA = oldLocal;
   }
 }
