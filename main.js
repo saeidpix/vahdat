@@ -239,7 +239,7 @@ async function smokeUpdater() {
         const map = pathname.includes('/v1.0.4/') ? newBlockmap : oldBlockmap;
         res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': map.length }); res.end(map);
       } else if (pathname.endsWith('.exe')) {
-        const range = /^bytes=(\\d+)-(\\d+)$/.exec(req.headers.range || '');
+        const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '');
         if (range) {
           const first=Number(range[1]), last=Math.min(Number(range[2]),bytes.length-1), part=bytes.subarray(first,last+1);
           servedBytes+=part.length; res.writeHead(206, { 'Content-Range': 'bytes '+first+'-'+last+'/'+bytes.length, 'Accept-Ranges':'bytes', 'Content-Length':part.length }); res.end(part);
