@@ -147,8 +147,6 @@
       var id = button && { v16Decode: 'v16ScanInput', v19AddWaybill: 'v19WaybillCode' }[button.id];
       if (id) { var el = doc.getElementById(id); if (el) finalize(el); }
     }, true);
-    var indicator = doc.getElementById('hidScannerStatus');
-    if (indicator) indicator.textContent = 'اسکن HID فعال';
     var submit = doc.getElementById('v22QrSubmit');
     if (submit && submit.addEventListener)
       submit.addEventListener('click', function () { submitReleaseScan(doc, host); });
