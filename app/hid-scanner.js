@@ -30,15 +30,30 @@
     return null;
   }
 
+  // Keep the authoritative ASCII text outside the DOM. Persian IME may add
+  // extra combining characters even when the physical key was intercepted.
+  var buffers = new WeakMap();
+  function state(el) {
+    var s = buffers.get(el);
+    if (!s) { s = { active: false, text: '' }; buffers.set(el, s); }
+    return s;
+  }
+  function forget(el) { var s = state(el); s.active = false; s.text = ''; }
+  function finalize(el) {
+    var s = state(el);
+    if (s.active) el.value = s.text;
+    forget(el);
+    return el.value;
+  }
   function insertCharacter(el, character) {
-    var a = typeof el.selectionStart === 'number' ? el.selectionStart : el.value.length;
-    var b = typeof el.selectionEnd === 'number' ? el.selectionEnd : a;
-    if (el.maxLength >= 0 && el.value.length - (b - a) + character.length > el.maxLength)
+    var s = state(el);
+    if (s.active && el.value === '' && s.text) forget(el);
+    if (!s.active) { s.active = true; s.text = String(el.value || ''); }
+    if (el.maxLength >= 0 && s.text.length + character.length > el.maxLength)
       return false;
-    if (typeof el.setRangeText === 'function')
-      el.setRangeText(character, a, b, 'end');
-    else
-      el.value = el.value.slice(0, a) + character + el.value.slice(b);
+    s.text += character;
+    el.value = s.text;
+    if (typeof el.setSelectionRange === 'function') el.setSelectionRange(s.text.length, s.text.length);
     if (typeof el.dispatchEvent === 'function')
       el.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
@@ -52,7 +67,7 @@
   function submitReleaseScan(doc, host) {
     var el = doc.getElementById('v22QrScanInput');
     if (!el) return false;
-    var value = String(el.value || '').trim(), status = doc.getElementById('v22Msg');
+    var value = String(finalize(el) || '').trim(), status = doc.getElementById('v22Msg');
     if (!value) return false;
     el.value = '';
     if (!isValidScan(value)) {
@@ -79,15 +94,16 @@
       var el = event.target;
       if (!el || !scanFields[el.id] || el.disabled || el.readOnly) return;
       if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) return;
-      if (el.id === 'v22QrScanInput' &&
-          (event.key === 'Enter' || event.code === 'Enter')) {
+      if (event.key === 'Enter' || event.code === 'Enter' || event.code === 'NumpadEnter') {
+        finalize(el);
+        if (el.id === 'v22QrScanInput') {
         event.preventDefault();
         event.stopPropagation();
-        submitReleaseScan(doc, host);
+          submitReleaseScan(doc, host);
+        }
         return;
       }
       // Existing Enter handlers still issue/receive/handover each complete scan.
-      if (event.key === 'Enter' || event.code === 'Enter') return;
       if (event.key === 'Tab' || event.code === 'Tab' ||
           event.key === 'Backspace' || event.code === 'Backspace' ||
           event.key === 'Delete' || event.code === 'Delete') return;
@@ -97,6 +113,42 @@
       event.stopPropagation();
       insertCharacter(el, char);
     }, true);
+    // Cancel OS input/composition after a physical HID key has already been
+    // reconstructed, and restore the ASCII buffer on non-cancelable input.
+    doc.addEventListener('beforeinput', function (e) {
+      var el = e.target;
+      if (!el || !scanFields[el.id] || !state(el).active) return;
+      if (e.inputType === 'insertFromPaste' || e.inputType === 'insertFromDrop' ||
+          e.inputType === 'historyUndo' || e.inputType === 'historyRedo') {
+        forget(el); return;
+      }
+      if (e.cancelable) e.preventDefault();
+    }, true);
+    doc.addEventListener('input', function (e) {
+      var el = e.target;
+      if (!el || !scanFields[el.id]) return;
+      var s = state(el);
+      if (s.active && el.value !== s.text) {
+        el.value = s.text;
+        if (typeof el.setSelectionRange === 'function')
+          el.setSelectionRange(s.text.length, s.text.length);
+      }
+    }, true);
+    doc.addEventListener('compositionend', function (e) {
+      var el = e.target;
+      if (el && scanFields[el.id] && state(el).active)
+        el.value = state(el).text;
+    }, true);
+    doc.addEventListener('paste', function (e) {
+      if (e.target && scanFields[e.target.id]) forget(e.target);
+    }, true);
+    doc.addEventListener('click', function (e) {
+      var button = e.target && e.target.closest && e.target.closest('button');
+      var id = button && { v16Decode: 'v16ScanInput', v19AddWaybill: 'v19WaybillCode' }[button.id];
+      if (id) { var el = doc.getElementById(id); if (el) finalize(el); }
+    }, true);
+    var indicator = doc.getElementById('hidScannerStatus');
+    if (indicator) indicator.textContent = 'اسکن HID فعال';
     var submit = doc.getElementById('v22QrSubmit');
     if (submit && submit.addEventListener)
       submit.addEventListener('click', function () { submitReleaseScan(doc, host); });
@@ -104,6 +156,7 @@
 
   if (typeof module !== 'undefined' && module.exports)
     module.exports = { usCharacter: usCharacter, insertCharacter: insertCharacter,
-      isValidScan: isValidScan, submitReleaseScan: submitReleaseScan, install: install };
+      isValidScan: isValidScan, submitReleaseScan: submitReleaseScan,
+      finalize: finalize, forget: forget, install: install };
   if (root && root.document) install(root.document, root);
 })(typeof window === 'undefined' ? null : window);
