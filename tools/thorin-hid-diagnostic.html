@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمایش آفلاین THORIN HID</title>
+<style>body{background:#eff3f8;color:#18334e;font-family:Tahoma,Arial,sans-serif;line-height:2;margin:20px auto;max-width:850px;padding:0 16px}h1{font-size:24px}section{background:white;border:1px solid #d0dde8;border-radius:14px;padding:20px;margin:16px 0}textarea{width:100%;box-sizing:border-box;min-height:110px;border:2px solid #9abbd7;border-radius:10px;padding:10px;direction:ltr;text-align:left;font:16px Consolas,monospace}button{background:#125b94;color:white;border:0;border-radius:8px;padding:9px 16px;font:inherit;cursor:pointer;margin:8px 0 8px 8px}pre{white-space:pre-wrap;overflow-wrap:anywhere;direction:ltr;text-align:left;font:12px Consolas,monospace;background:#f2f7fb;padding:13px;border-radius:9px}small{color:#566f87}</style></head>
+<body><h1>عیب‌یابی بارکدخوان THORIN</h1><small>کاملاً آفلاین؛ مستقل از باررسان و بانک اطلاعاتی. گزارش شامل متن کامل QR نمی‌شود.</small>
+<section><p>۱. باررسان را ببند و کیبورد ویندوز را فارسی بگذار.</p><p>۲. داخل کادر زیر کلیک کن و QR آزمایشی را با THORIN اسکن کن.</p>
+<textarea id="scan" autofocus spellcheck="false" placeholder="اینجا اسکن کن"></textarea>
+<button id="copy">کپی گزارش</button><button id="clear">پاک‌کردن</button><div id="status">آماده اسکن</div></section>
+<section><b>گزارش کلیدها</b><p><small>فقط ۱۶ کلید اول، پیشوند ۱۰ کاراکتری و تعداد کاراکترها ذخیره می‌شود.</small></p><pre id="report">هنوز اسکن انجام نشده است.</pre></section>
+<script>
+(function(){
+'use strict';
+const scan=document.getElementById('scan'),report=document.getElementById('report'),status=document.getElementById('status');
+let keys=[],count=0,unknown=0,ascii='',enter=false;
+const punct={Minus:['-','_'],Equal:['=','+'],BracketLeft:['[','{'],BracketRight:[']','}'],Backslash:['\\','|'],Semicolon:[';',':'],Quote:["'",'"'],Comma:[',','<'],Period:['.','>'],Slash:['/','?'],NumpadDecimal:['.','.'],NumpadSubtract:['-','-']};
+function us(e){const c=e.code||'',s=!!e.shiftKey;if(/^Key[A-Z]$/.test(c))return s?c.slice(3):c.slice(3).toLowerCase();if(/^Digit[0-9]$/.test(c))return s?')!@#$%^&*('[+c.slice(5)]:c.slice(5);if(/^Numpad[0-9]$/.test(c))return c.slice(6);if(punct[c])return punct[c][s?1:0];if(!c&&/^[a-zA-Z0-9_.-]$/.test(e.key||''))return e.key;return null}
+function message(){return 'THORIN_KEY_DIAG_1\nBROWSER='+navigator.userAgent.slice(0,110)+'\nKEY_COUNT='+count+'\nUNKNOWN='+unknown+'\nENTER='+enter+'\nRAW_PREFIX_10='+JSON.stringify(scan.value.slice(0,10))+'\nUS_PREFIX_10='+JSON.stringify(ascii.slice(0,10))+'\nUS_LENGTH='+ascii.length+'\nRAW_LENGTH='+scan.value.length+'\nFIRST_16_EVENTS:\n'+keys.map((x,i)=>(i+1)+': '+JSON.stringify(x)).join('\n')}
+function paint(){report.textContent=message();status.textContent='کلیدها: '+count+' | نامشخص: '+unknown+' | Enter: '+(enter?'بله':'خیر')}
+scan.addEventListener('keydown',e=>{
+ if(e.key==='Enter'||e.code==='Enter'||e.code==='NumpadEnter'){e.preventDefault();enter=true;paint();return}
+ if(['Shift','Control','Alt','Meta','CapsLock','Tab','Escape','Backspace'].includes(e.key))return;
+ const ch=us(e);count++;if(ch===null)unknown++;else ascii+=ch;
+ if(keys.length<16)keys.push({code:e.code,key:e.key,shift:e.shiftKey,ctrl:e.ctrlKey,alt:e.altKey,compose:e.isComposing,us:ch});
+ paint();
+});
+scan.addEventListener('input',paint);
+document.getElementById('clear').onclick=()=>{scan.value='';keys=[];count=0;unknown=0;ascii='';enter=false;paint();scan.focus()};
+document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(message());status.textContent='گزارش کپی شد؛ در گفتگو ارسال کن.'}catch(e){report.textContent=message();const r=document.createRange();r.selectNodeContents(report);getSelection().removeAllRanges();getSelection().addRange(r);status.textContent='گزارش انتخاب شد؛ Ctrl+C بزن و ارسال کن.'}};
+scan.focus();
+})();
+</script></body></html>

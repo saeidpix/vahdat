@@ -2,7 +2,7 @@
 
 <html dir="rtl" lang="fa">
 <head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>باررسان | نسخه ۱</title>
+<title>باررسان</title>
 <script>window.v24Origin=function(){try{var c=JSON.parse(localStorage.getItem('autobenz-company-v1'));return (c&&c.origin)||'تهران'}catch(e){return 'تهران'}};window.v24Company=function(){try{return JSON.parse(localStorage.getItem('autobenz-company-v1'))||{}}catch(e){return {}}}</script>
 <style>
 :root{--navy:#12345b;--navy2:#1b456e;--accent:#1769b6;--canvas:#f2f5fa;--ink:#21344d;--muted:#6f8198;--line:#e1e8f1;--white:#fff}
@@ -1122,7 +1122,7 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
 </section>
 <div class="v19-grid">
   <section class="v19-card v19-entry"><div class="v19-card-head"><span class="v19-symbol">▤</span><div><h3>انتخاب بارنامه‌ها</h3><small>می‌توانی چند بارنامه را به یک راننده تحویل بدهی.</small></div><span id="v19SelectedCount" class="v19-count">۰ انتخاب</span></div>
-   <div class="v19-search"><label for="v19WaybillCode">شماره بارنامه / متن QR دوبعدی</label><div class="v19-search-line"><input id="v19WaybillCode" autocomplete="off" placeholder="شماره بارنامه را وارد کنید و Enter بزنید" spellcheck="false"/><button type="button" id="v19AddWaybill" class="v19-primary">افزودن</button></div><div id="v19FindMessage" role="status" class="v19-small-status"></div></div>
+   <div class="v19-search"><label for="v19WaybillCode">شماره بارنامه / متن QR دوبعدی</label><div class="v19-search-line"><input id="v19WaybillCode" autocomplete="off" maxlength="12000" placeholder="شماره بارنامه را وارد کنید و Enter بزنید" spellcheck="false"/><button type="button" id="v19AddWaybill" class="v19-primary">افزودن</button></div><div id="v19FindMessage" role="status" class="v19-small-status"></div></div>
    <div class="v19-subhead"><b>بارنامه‌های انتخاب‌شده</b><span id="v19SelectionHint">هنوز بارنامه‌ای انتخاب نشده است.</span></div>
    <div class="v19-selected" id="v19SelectedList" aria-live="polite"></div>
   </section>
@@ -1152,6 +1152,7 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
   <div class="v22-grid">
    <section class="v19-card"><div class="v19-card-head"><span class="v19-symbol">▤</span><div><h3>۱. بارهای منتظر ترخیص</h3><small>شماره، متن QR، نام یا موبایل گیرنده را وارد کن.</small></div><span class="v19-count" id="v22WaitCount">۰ بارنامه</span></div>
     <div style="padding:10px 12px"><input id="v22Search" type="search" autocomplete="off" spellcheck="false" placeholder="شماره بارنامه / متن QR / نام یا موبایل گیرنده + Enter" aria-label="جستجوی بار منتظر ترخیص"/></div>
+    <div style="padding:8px 12px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><label for="v22QrScanInput" style="font-weight:700;color:#34566f">اسکن QR با بارکدخوان (مستقل از زبان ویندوز)</label><input id="v22QrScanInput" type="text" dir="ltr" maxlength="12000" autocomplete="off" spellcheck="false" placeholder="بارکد را اینجا اسکن کنید" aria-label="اسکن QR بارنامه برای ترخیص" style="flex:1 1 250px;min-width:190px;padding:8px 10px;border:1px solid #b9d4e7;border-radius:8px;direction:ltr;text-align:left"/><button id="v22QrSubmit" type="button" class="v19-primary">خواندن QR</button></div>
     <div class="v22-list" id="v22WaitList"></div></section>
   </div>
   <div id="v22Msg" class="v19-small-status" role="status"></div>
@@ -1169,7 +1170,7 @@ body.v22-release-mode .nav-btn[data-section="ترخیص بار"]{background:line
 <section id="v16DestinationView" class="v16-destination" hidden dir="rtl" aria-label="دریافت در مقصد">
   <div class="v16-dest-top"><div><small>باررسان / ماژول مقصد</small><h2>دریافت بارنامه از QR</h2><p>کد QR بارنامه را اسکن کنید؛ دریافت به‌صورت خودکار ثبت می‌شود.</p></div><button type="button" class="v16-outline" id="v16BackWaybill">بازگشت به صدور</button></div>
   <div class="v16-dest-cols"><div class="v16-dest-card"><h3>۱. خواندن بارکد دوبعدی</h3><p>اسکنر دوبعدی متصل به کامپیوتر مانند صفحه‌کلید عمل می‌کند. با هر اسکن، بارنامه خودکار ثبت می‌شود و کادر پاک می‌شود.</p>
-    <label for="v16ScanInput">متن خوانده‌شده از QR</label><textarea id="v16ScanInput" rows="4" spellcheck="false" dir="ltr" placeholder="ABV16.Z. ..."></textarea>
+    <label for="v16ScanInput">متن خوانده‌شده از QR</label><textarea id="v16ScanInput" rows="4" spellcheck="false" dir="ltr" maxlength="12000" placeholder="ABV16.Z. ..."></textarea>
     <div class="v16-row-buttons"><button type="button" class="v16-primary" id="v16Decode">ثبت دریافت</button><button class="v16-outline" type="button" id="v16ClearScan">پاک‌کردن</button></div>
     <div class="v16-scanner-notice" id="v16ScanStatus" role="status">آماده اسکن؛ پس از اسکن، دریافت خودکار ثبت می‌شود.</div>
     
@@ -4008,6 +4009,7 @@ window.v16DecodeQr=fromQR;
   msg(hits.length?fmtNum(hits.length)+' مورد پیدا شد؛ از فهرست انتخاب کنید.':'بار منتظر ترخیصی با این مشخصات پیدا نشد.',!hits.length);
  }
  q('v22WaitList').onclick=e=>{const b=e.target.closest('[data-v22-pick]');if(b)pick(records.find(x=>x.id===b.dataset.v22Pick))};
+ window.barresanReleaseScan=function(raw){q('v22Search').value=String(raw||'');return search();};
  q('v22Search').addEventListener('input',render);
  q('v22Search').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();search()}});
  function enter(){
@@ -4016,7 +4018,7 @@ window.v16DecodeQr=fromQR;
   ['v19HandoffView','v16DestinationView','v21DriverReportView'].forEach(id=>q(id).hidden=true);
   document.body.classList.add('v22-release-mode');view.hidden=false;
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('is-active',b.dataset.section==='ترخیص بار'));
-  msg('');render();window.scrollTo(0,0);q('v22Search').focus();
+  msg('');render();window.scrollTo(0,0);q('v22QrScanInput').focus();
  }
  function leave(){document.body.classList.remove('v22-release-mode');view.hidden=true}
  const previousNavigate=navigate;
@@ -5075,4 +5077,5 @@ html body{overflow-x:clip!important;overflow-y:visible!important}
  (function(){const f=document.querySelector('#settingsPanel .sm-footer'),hd=document.querySelector('#settingsPanel .sm-header');if(f&&hd&&hd.parentNode)hd.parentNode.insertBefore(f,hd.nextSibling)})();
 })();
 </script>
+<script src="hid-scanner.js"></script>
 </body></html>

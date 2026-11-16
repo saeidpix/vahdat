@@ -232,11 +232,11 @@ async function smokeUpdater() {
     server = http.createServer((req, res) => {
       const pathname = req.url.split('?')[0];
       if (pathname.startsWith('/latest-')) {
-        const url = 'http://127.0.0.1:' + server.address().port + '/v1.0.4/Barresan-Setup-1.0.4-' + arch + '.exe';
-        const body = 'version: 1.0.4\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
+        const url = 'http://127.0.0.1:' + server.address().port + '/v1.0.7/Barresan-Setup-1.0.7-' + arch + '.exe';
+        const body = 'version: 1.0.7\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
         res.writeHead(200, { 'Content-Type': 'text/yaml' }); res.end(body);
       } else if (pathname.endsWith('.blockmap')) {
-        const map = pathname.includes('/v1.0.4/') ? newBlockmap : oldBlockmap;
+        const map = pathname.includes('/v1.0.7/') ? newBlockmap : oldBlockmap;
         res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': map.length }); res.end(map);
       } else if (pathname.endsWith('.exe')) {
         const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '');
@@ -274,6 +274,22 @@ async function smokeUpdater() {
 async function smoke() {
   __mark('smoke-begin');
   const out = { electron: process.versions.electron, node: process.versions.node, arch: process.arch };
+  // Verify the ACTUAL packaged .asar contains the UI and HID adapter.
+  // This is intentionally executed by the installed Electron binary during smoke.
+  const shippedHtml = fs.readFileSync(path.join(__dirname, 'app', 'index.html'), 'utf8');
+  const shippedHid = fs.readFileSync(path.join(__dirname, 'app', 'hid-scanner.js'), 'utf8');
+  out.appVersion = app.getVersion();
+  out.hidBundle = !shippedHtml.includes('id="hidBuildMarker"')
+    && !shippedHtml.includes('id="hidScannerStatus"')
+    && shippedHtml.includes('<title>باررسان</title>')
+    && shippedHtml.includes('id="v22QrScanInput"')
+    && shippedHtml.includes('<script src="hid-scanner.js"></script>')
+    && shippedHid.includes('v16ScanInput')
+    && shippedHid.includes('v19WaybillCode')
+    && shippedHid.includes('v22QrScanInput')
+    && shippedHid.includes('var buffers = new WeakMap()')
+    && shippedHid.includes("doc.addEventListener('beforeinput'");
+
   try { const d = pickBackupDrive(parseDrives('C:=3=5000000000\r\nD:=3=900000000000\r\nE:=5=0\r\nF:=2=8000000000\r\n'), 'C:\\'); out.drivePick = d.map(x => x.id).join(','); } catch (e) { out.drivePick = 'ERR ' + e; }
   __mark('drive-pick-done');
   if (process.platform === 'win32') { try { out.autoDir = await Promise.race([new Promise(r => require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', "Get-WmiObject Win32_LogicalDisk | ForEach-Object { $_.DeviceID + '=' + $_.DriveType + '=' + $_.FreeSpace }"], { timeout: 15000, windowsHide: true }, (e, o) => r(e ? 'ERR ' + e.message : JSON.stringify(parseDrives(o))))), new Promise(r => setTimeout(() => r('timeout'), 20000))]); } catch (e) { out.autoDir = 'ERR ' + e; } }
@@ -309,7 +325,7 @@ async function smoke() {
     s4.close(); fs.unlinkSync(testUpdate);
     out.ok = out.ok && out.preUpdateRestoredRows === 2001;
     out.updaterIntegration = await smokeUpdater();
-    out.ok = out.ok && out.updaterIntegration.checked === 'available' && out.updaterIntegration.downloaded === 'downloaded';
+    out.ok = out.ok && out.hidBundle && out.appVersion === '1.0.6' && out.updaterIntegration.checked === 'available' && out.updaterIntegration.downloaded === 'downloaded';
   } catch (e) { out.ok = false; out.error = String(e && e.stack || e); }
   console.log('SMOKE_RESULT ' + JSON.stringify(out));
   if (process.env.SMOKE_OUT) { try { fs.writeFileSync(process.env.SMOKE_OUT, JSON.stringify(out)); } catch (_) {} }
