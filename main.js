@@ -206,7 +206,7 @@ function registerIpc() {
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1366, height: 820, show: false, title: 'باررسان — نسخه آزمایشی ۱.۰.۴ HID', autoHideMenuBar: true,
+    width: 1366, height: 820, show: false, title: 'باررسان — نسخه آزمایشی ۱.۰.۵ HID', autoHideMenuBar: true,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: false, nodeIntegration: false, sandbox: false, spellcheck: false }
   });
@@ -232,11 +232,11 @@ async function smokeUpdater() {
     server = http.createServer((req, res) => {
       const pathname = req.url.split('?')[0];
       if (pathname.startsWith('/latest-')) {
-        const url = 'http://127.0.0.1:' + server.address().port + '/v1.0.5/Barresan-Setup-1.0.5-' + arch + '.exe';
-        const body = 'version: 1.0.5\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
+        const url = 'http://127.0.0.1:' + server.address().port + '/v1.0.6/Barresan-Setup-1.0.6-' + arch + '.exe';
+        const body = 'version: 1.0.6\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
         res.writeHead(200, { 'Content-Type': 'text/yaml' }); res.end(body);
       } else if (pathname.endsWith('.blockmap')) {
-        const map = pathname.includes('/v1.0.5/') ? newBlockmap : oldBlockmap;
+        const map = pathname.includes('/v1.0.6/') ? newBlockmap : oldBlockmap;
         res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': map.length }); res.end(map);
       } else if (pathname.endsWith('.exe')) {
         const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '');
@@ -280,12 +280,15 @@ async function smoke() {
   const shippedHid = fs.readFileSync(path.join(__dirname, 'app', 'hid-scanner.js'), 'utf8');
   out.appVersion = app.getVersion();
   out.hidBundle = shippedHtml.includes('id="hidBuildMarker"')
-    && shippedHtml.includes('آزمایشی ۱.۰.۴ — اصلاح اسکن فارسی HID')
+    && shippedHtml.includes('آزمایشی ۱.۰.۵ — اصلاح اسکن فارسی HID')
     && shippedHtml.includes('id="v22QrScanInput"')
+    && shippedHtml.includes('id="hidScannerStatus"')
     && shippedHtml.includes('<script src="hid-scanner.js"></script>')
     && shippedHid.includes('v16ScanInput')
     && shippedHid.includes('v19WaybillCode')
-    && shippedHid.includes('v22QrScanInput');
+    && shippedHid.includes('v22QrScanInput')
+    && shippedHid.includes('var buffers = new WeakMap()')
+    && shippedHid.includes("doc.addEventListener('beforeinput'");
 
   try { const d = pickBackupDrive(parseDrives('C:=3=5000000000\r\nD:=3=900000000000\r\nE:=5=0\r\nF:=2=8000000000\r\n'), 'C:\\'); out.drivePick = d.map(x => x.id).join(','); } catch (e) { out.drivePick = 'ERR ' + e; }
   __mark('drive-pick-done');
@@ -322,7 +325,7 @@ async function smoke() {
     s4.close(); fs.unlinkSync(testUpdate);
     out.ok = out.ok && out.preUpdateRestoredRows === 2001;
     out.updaterIntegration = await smokeUpdater();
-    out.ok = out.ok && out.hidBundle && out.appVersion === '1.0.4' && out.updaterIntegration.checked === 'available' && out.updaterIntegration.downloaded === 'downloaded';
+    out.ok = out.ok && out.hidBundle && out.appVersion === '1.0.5' && out.updaterIntegration.checked === 'available' && out.updaterIntegration.downloaded === 'downloaded';
   } catch (e) { out.ok = false; out.error = String(e && e.stack || e); }
   console.log('SMOKE_RESULT ' + JSON.stringify(out));
   if (process.env.SMOKE_OUT) { try { fs.writeFileSync(process.env.SMOKE_OUT, JSON.stringify(out)); } catch (_) {} }
