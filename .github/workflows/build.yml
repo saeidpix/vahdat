@@ -2,7 +2,7 @@ name: build-windows-installer
 on:
   workflow_dispatch:
   push:
-    branches: [release/v1, codex/print-layout-and-upgrade-safety, fix/thorin-hid-persian-layout-1.0.3]
+    branches: [release/v1, codex/print-layout-and-upgrade-safety, fix/thorin-hid-persian-layout-1.0.3, feature/waybill-amend-cancel-audit]
 jobs:
   build:
     runs-on: windows-latest
@@ -16,12 +16,16 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Check THORIN HID scanner (Persian and English layouts)
         run: node tests/hid-scanner-regression.js
+      - name: Check waybill edit/cancel audit and source scripts
+        run: |
+          node tests/waybill-audit-regression.js
+          node tests/inline-js-syntax.js
       - name: Check print regression
         run: node tests/print-regression.js
       - name: Check updater state machine
         run: node tests/updater-regression.js
       - name: Verify build version
-        run: node -e "if(require('./package.json').version!=='1.0.6')process.exit(1)"
+        run: node -e "if(require('./package.json').version!=='1.0.7')process.exit(1)"
       - name: Build and smoke-test both installers (64-bit, then 32-bit)
         shell: pwsh
         run: |
@@ -37,7 +41,7 @@ jobs:
             $d = if ($arch -eq "x64") { "win-unpacked" } else { "win-ia32-unpacked" }
             if (-not (Test-Path "dist\$d\resources\app-update.yml")) { Write-Error "missing app-update.yml ($arch)"; exit 1 }
             $out = "$PWD\smoke-$arch.json"
-            $env:SMOKE_INSTALLER = (Resolve-Path "dist\Barresan-Setup-1.0.6-$arch.exe").Path
+            $env:SMOKE_INSTALLER = (Resolve-Path "dist\Barresan-Setup-1.0.7-$arch.exe").Path
             node scripts/create-delta-fixture.js $env:SMOKE_INSTALLER "dist\delta-fixture-$arch.exe"
             if ($LASTEXITCODE -ne 0) { exit 1 }
             $env:SMOKE_CHANGED_INSTALLER = (Resolve-Path "dist\delta-fixture-$arch.exe").Path
