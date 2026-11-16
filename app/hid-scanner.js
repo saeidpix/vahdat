@@ -93,7 +93,7 @@
     doc.addEventListener('keydown', function (event) {
       var el = event.target;
       if (!el || !scanFields[el.id] || el.disabled || el.readOnly) return;
-      if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) return;
+      if (event.ctrlKey || event.altKey || event.metaKey) return; // physical HID keys may arrive during IME composition
       if (event.key === 'Enter' || event.code === 'Enter' || event.code === 'NumpadEnter') {
         finalize(el);
         if (el.id === 'v22QrScanInput') {
