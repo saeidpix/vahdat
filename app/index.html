@@ -4885,7 +4885,39 @@ window.v16DecodeQr=fromQR;
  }
 
  /* ================= record view / edit / cancel ================= */
+ function setupAmendReason(){
+  const st=$('formStatus'),msg=$('formMessage'),submit=$('waybillForm')?.querySelector('button[type="submit"]');
+  if(!st||!msg)return;
+  const box=document.createElement('div');
+  box.id='v25AmendBox';box.hidden=true;box.style.cssText='margin:10px 0;padding:12px 15px;background:#fff9ee;border:1px solid #eed5a7;border-radius:10px';
+  box.innerHTML='<label for="v25AmendReason" style="font-weight:800;display:block;margin-bottom:6px">دلیل اصلاحیه بارنامه *</label>'+
+    '<textarea id="v25AmendReason" rows="2" maxlength="300" placeholder="مثلاً اصلاح مبلغ پیش‌کرایه طبق درخواست فرستنده" style="width:100%;font:inherit;padding:9px;border:1px solid #cfb990;border-radius:8px"></textarea>'+
+    '<small>هر تغییر با مقدار قبلی، مقدار جدید، نام کاربر و تاریخ و ساعت دقیق در سوابق ذخیره می‌شود.</small>';
+  msg.insertAdjacentElement('afterend',box);
+  const sync=()=>{
+    const active=st.textContent.includes('در حال ویرایش');
+    if(!active&&box.hidden===false)$('v25AmendReason').value='';
+    box.hidden=!active;
+    if(submit)submit.textContent=active?'ثبت اصلاحیه بارنامه':'ثبت بارنامه';
+  };
+  new MutationObserver(sync).observe(st,{childList:true,characterData:true,subtree:true});
+  sync();
+ }
+ setupAmendReason();
  const recs=()=>normalizeWaybillRecords(safeRead(recKey,[]));
+ const editable=r=>window.barresanWaybillAudit?.canChange(r)===true;
+ window.v25BeginAmend=function(id){
+  const r=recs().find(x=>String(x.id)===String(id));
+  if(!r)return window.v23Alert?.('بارنامه پیدا نشد','اطلاعات را بازخوانی کنید.');
+  if(!can('editBill')||!editable(r))return window.v23Alert?.('اجازه اصلاح وجود ندارد','اصلاح تنها برای بارنامه صادرشده و تحویل‌نداده‌شده با مجوز کاربر امکان‌پذیر است.');
+  blankForm();fillForm(r);showView('waybill');
+ };
+ window.v25BeginCancel=function(id){
+  const r=recs().find(x=>String(x.id)===String(id));
+  if(!r)return window.v23Alert?.('بارنامه پیدا نشد','اطلاعات را بازخوانی کنید.');
+  if(!can('cancelBill')||!editable(r))return window.v23Alert?.('اجازه ابطال وجود ندارد','ابطال تنها برای بارنامه صادرشده و تحویل‌نداده‌شده با مجوز کاربر امکان‌پذیر است.');
+  askCancel(r);
+ };
  window.v25ViewRecord=function(id){
   const r=recs().find(x=>String(x.id)===String(id));if(!r)return;
   const st=statusOf(r),log=auditOf(r.id),edits=log.filter(x=>x.type==='edit').length;
@@ -4895,30 +4927,36 @@ window.v16DecodeQr=fromQR;
    ${edits?`<div class="v24-info" style="margin-top:12px">این بارنامه ${fa(edits)} بار ویرایش شده است. <a href="#" id="v25ViewLog">مشاهده‌ی سابقه</a></div>`:''}
    ${st==='باطل‌شده'?`<div class="v24-warn" style="margin-top:12px">باطل شده توسط <b>${esc(r.cancelledBy||'—')}</b> در ${esc(r.cancelledAt?jDateTime(r.cancelledAt):'—')}<br>دلیل: ${esc(r.cancelReason||'—')}</div>`:''}`;
   const btns=[];
-  if(st==='صادرشده'&&can('editBill'))btns.push({label:'ویرایش بارنامه',cls:'',onClick:close=>{close();blankForm();fillForm(r);showView('waybill')}});
+  if(editable(r)&&can('editBill'))btns.push({label:'اصلاح بارنامه',cls:'',onClick:close=>{close();window.v25BeginAmend(r.id)}});
   if(st!=='باطل‌شده')btns.push({label:'چاپ نسخه ثبت‌شده',onClick:close=>{close();printWaybill(r)}});
-  if(st!=='باطل‌شده'&&st!=='ترخیص‌شده'&&(isAdm()||can('cancelBill')))btns.push({label:'ابطال بارنامه',cls:'warn',onClick:close=>{close();askCancel(r)}});
+  if(editable(r)&&can('cancelBill'))btns.push({label:'ابطال بارنامه',cls:'warn',onClick:close=>{close();window.v25BeginCancel(r.id)}});
+  if(isAdm()||can('audit'))btns.push({label:'سابقه اصلاحات و ابطال‌ها',cls:'alt',onClick:close=>{close();showLog(r.id)}});
   btns.push({label:'بستن'});
   const d=dialog('جزئیات بارنامه '+fa(r.id),body,btns,{wide:true});
   const lk=d.el.querySelector('#v25ViewLog');if(lk)lk.onclick=e=>{e.preventDefault();d.close();showLog(r.id)};
  };
  function showLog(id){
   const rows=auditOf(id).sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
-  dialog('سابقه‌ی بارنامه '+fa(id),rows.length?`<table class="v25-mini"><thead><tr><th>تاریخ و ساعت</th><th>نوع</th><th>کاربر</th><th>تغییرات</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(jDateTime(x.at))}</td><td>${x.type==='cancel'?'ابطال':'ویرایش'}</td><td>${esc(x.user)}</td><td>${x.type==='cancel'?'دلیل: '+esc(x.reason||'—'):(x.changes||[]).map(c=>`<div><b>${esc(c.f)}:</b> ${esc(c.from)} ← ${esc(c.to)}</div>`).join('')}</td></tr>`).join('')}</tbody></table>`:'<p>سابقه‌ای ثبت نشده است.</p>',[{label:'بستن'}],{wide:true});
+  dialog('سابقه‌ی بارنامه '+fa(id),rows.length?`<table class="v25-mini"><thead><tr><th>تاریخ و ساعت (تهران)</th><th>نوع</th><th>کاربر</th><th>دلیل و تغییرات</th></tr></thead><tbody>${rows.map(x=>`<tr><td title="${esc(x.at)}">${esc(jDateTime(x.at))}</td><td>${x.type==='cancel'?'ابطال':'اصلاح'}</td><td>${esc(x.user)}</td><td>${auditDetail(x)}</td></tr>`).join('')}</tbody></table>`:'<p>سابقه‌ای ثبت نشده است.</p>',[{label:'بستن'}],{wide:true});
  }
  function askCancel(r){
-  const d=dialog('ابطال بارنامه '+fa(r.id),`<p>با ابطال، بارنامه حذف نمی‌شود و شماره‌اش می‌ماند، ولی دیگر قابل تحویل، دریافت یا ترخیص نیست. این کار برگشت‌پذیر نیست.</p><div class="v24-f"><label for="v25Reason">دلیل ابطال *</label><textarea id="v25Reason" rows="3" maxlength="300"></textarea></div><div class="v24-msg err" id="v25ReasonMsg"></div>`,[
+  if(!can('cancelBill')||!editable(r))return window.v23Alert?.('اجازه ابطال وجود ندارد','وضعیت یا مجوز این بارنامه تغییر کرده است.');
+  dialog('ابطال بارنامه '+fa(r.id),`<p>با ابطال، بارنامه حذف نمی‌شود و شماره‌اش می‌ماند، اما دیگر قابل تحویل، دریافت یا ترخیص نیست. این کار برگشت‌پذیر نیست.</p><div class="v24-f"><label for="v25Reason">دلیل ابطال *</label><textarea id="v25Reason" rows="3" maxlength="300"></textarea></div><div class="v24-msg err" id="v25ReasonMsg"></div>`,[
    {label:'تأیید ابطال',cls:'warn',onClick:close=>{
     const reason=$('v25Reason').value.trim();if(!reason){$('v25ReasonMsg').textContent='نوشتن دلیل الزامی است.';return}
-    const list=recs(),i=list.findIndex(x=>String(x.id)===String(r.id));if(i<0)return;
-    const cur=statusOf(list[i]);if(cur==='باطل‌شده'||cur==='ترخیص‌شده'){$('v25ReasonMsg').textContent='این بارنامه دیگر قابل ابطال نیست.';return}
-    list[i]={...list[i],status:'باطل‌شده',cancelledAt:new Date().toISOString(),cancelledBy:userName(),cancelReason:reason,statusBeforeCancel:cur};
-    if(!safeWrite(recKey,list)){$('v25ReasonMsg').textContent='ذخیره انجام نشد.';return}
-    records=list;auditAdd({type:'cancel',rid:String(r.id),reason,fromStatus:cur});
-    close();try{renderDashboard()}catch(_){}
-    window.v23Alert&&window.v23Alert('بارنامه '+fa(r.id)+' باطل شد','سابقه‌ی ابطال در گزارش‌ها › ویرایش‌ها و ابطال‌ها ثبت شد.');
+    if(!can('cancelBill')){$('v25ReasonMsg').textContent='مجوز ابطال ندارید.';return}
+    const list=recs(),i=list.findIndex(x=>String(x.id)===String(r.id));if(i<0){$('v25ReasonMsg').textContent='بارنامه پیدا نشد.';return}
+    try{
+      list[i]=window.barresanWaybillAudit.cancel(list[i],{
+        reason,...actor(),at:new Date().toISOString()
+      });
+    }catch(err){$('v25ReasonMsg').textContent=err.message||'ابطال مجاز نیست.';return}
+    // Status and audit log are committed together, never as separate writes.
+    if(!safeWrite(recKey,list)){$('v25ReasonMsg').textContent='ذخیره انجام نشد؛ ابطال ثبت نشده است.';return}
+    records=list;close();try{renderDashboard()}catch(_){}
+    window.v23Alert?.('بارنامه '+fa(r.id)+' باطل شد','دلیل ابطال، نام کاربر و تاریخ و ساعت دقیق همراه بارنامه ثبت شد.');
    }},{label:'انصراف'}]);
-  setTimeout(()=>$('v25Reason').focus(),30);
+  setTimeout(()=>$('v25Reason')?.focus(),30);
  }
 
  /* ================= form options: destination buttons, single package ================= */
