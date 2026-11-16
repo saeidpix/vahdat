@@ -52,7 +52,7 @@ const elements = Object.fromEntries(['v16ScanInput', 'v19WaybillCode',
 const handlers = {};
 const doc = {
   getElementById: id => elements[id],
-  addEventListener(type, fn, capture) { if (type === 'keydown' && capture) handlers.keydown = fn; }
+  addEventListener(type, fn, capture) { if (capture) handlers[type] = fn; }
 };
 let received = [];
 const host = { barresanReleaseScan: raw => received.push(raw) };
@@ -118,6 +118,46 @@ elements.v16ScanInput.maxLength = 2;
 scan(elements.v16ScanInput, 'AB');
 press(elements.v16ScanInput, 'KeyC', false, 'ض');
 assert.strictEqual(elements.v16ScanInput.value, 'AB', 'respect max length');
+
+// Actual THORIN Windows FA diagnostic: KeyA+Shift, KeyB+Shift,
+// KeyV+Shift, Digit1, Digit6, Period, KeyZ+Shift, Period, KeyE, KeyJ+Shift.
+// Windows produced 289 Unicode characters for 280 physical scan keys.
+// Simulate non-cancelable Persian IME append after each physical key and
+// verify the independent buffer restores exact ASCII before Enter.
+const diagnostic = [
+  ['KeyA', true, 'َ', 'A'], ['KeyB', true, 'إ', 'B'],
+  ['KeyV', true, 'ؤ', 'V'], ['Digit1', false, '1', '1'],
+  ['Digit6', false, '6', '6'], ['Period', false, '.', '.'],
+  ['KeyZ', true, 'ة', 'Z'], ['Period', false, '.', '.'],
+  ['KeyE', false, 'ث', 'e'], ['KeyJ', true, 'ـ', 'J']
+];
+const el = elements.v16ScanInput;
+el.maxLength = 12000;
+el.value = '';
+let want = '';
+for (const [code, shifted, persian, ascii] of diagnostic) {
+  const ev = press(el, code, shifted, persian);
+  assert(ev.prevented && ev.stopped);
+  want += ascii;
+  const ime = { target: el, cancelable: true, inputType: 'insertCompositionText',
+    prevented: false, preventDefault() { this.prevented = true; } };
+  handlers.beforeinput(ime);
+  assert(ime.prevented, 'Persian beforeinput must be cancelled');
+  // Also simulate a non-cancelable composition input that somehow slipped in.
+  el.value += persian + 'ِ';
+  handlers.input({ target: el });
+  assert.strictEqual(el.value, want, 'IME must not corrupt authoritative QR buffer');
+}
+assert.strictEqual(want, 'ABV16.Z.eJ');
+assert(!press(el, 'Enter', false, 'Enter').prevented);
+assert.strictEqual(el.value, 'ABV16.Z.eJ', 'Enter finalizes exact scanner QR');
+el.value = '';
+const resetEvent = press(el, 'KeyQ', false, 'ض');
+assert(resetEvent.prevented);
+assert.strictEqual(el.value, 'q', 'new scan starts after program clears input');
+handlers.paste({target:el});
+el.value='ABV16.Z.pasted';
+assert.strictEqual(hid.finalize(el), 'ABV16.Z.pasted', 'paste replaces scan state safely');
 
 const html = fs.readFileSync('app/index.html', 'utf8');
 for (const id of ['v16ScanInput', 'v19WaybillCode', 'v22QrScanInput', 'v22QrSubmit']) {
