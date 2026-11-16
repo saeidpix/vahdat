@@ -2858,11 +2858,28 @@ $('#waybillForm').addEventListener('submit',e=>{e.preventDefault();
  if(editingId&&window.v23Can&&!window.v23Can('editBill'))return invalid('شما مجوز ویرایش بارنامه ندارید.');
  if(!editingId&&window.v23Can&&!window.v23Can('issue'))return invalid('برای صدور بارنامه ابتدا با کاربر مجاز وارد شوید.');
  const data=gather();if(!validate(data))return;let rec,__old=null;
- if(editingId){const index=updated.findIndex(r=>r.id===editingId);__old=updated[index];rec={...updated[index],...data};updated[index]=rec}
+ if(editingId){
+   const index=updated.findIndex(r=>r.id===editingId);
+   __old=updated[index];
+   rec={...__old,...data};
+   const reason=document.getElementById('v25AmendReason')?.value.trim()||'';
+   try{
+     if(!window.barresanWaybillAudit)throw Error('بخش ثبت سوابق تغییرات فعال نیست؛ اصلاح متوقف شد.');
+     rec=window.barresanWaybillAudit.amend(__old,rec,{
+       reason,user:window.v23UserName?.()||'کاربر محلی (بدون ورود)',
+       userId:window.v23UserId?.()||'',at:new Date().toISOString()
+     });
+   }catch(err){return invalid(err.message||'اصلاح بارنامه انجام نشد.',document.getElementById('v25AmendReason'))}
+   updated[index]=rec;
+ }
  else{rec={...data,id:nextLocalId(),createdAt:new Date().toISOString(),status:'صادرشده',driver:''};updated.unshift(rec)}
- if(!safeWrite(recKey,updated))return invalid('ثبت بارنامه انجام نشد؛ ذخیره اطلاعات ممکن نبود.');records=updated;if(__old&&window.v25AuditEdit)window.v25AuditEdit(__old,rec);
+ // Both the edited record and its exact audit trail are saved in ONE write.
+ if(!safeWrite(recKey,updated))return invalid('ثبت بارنامه انجام نشد؛ ذخیره اطلاعات ممکن نبود.');records=updated;
  safeWrite(waybillSeqKey,Math.max(serialNumber(safeRead(waybillSeqKey,0)),serialNumber(rec.id)));
- lastSavedId=rec.id;try{localStorage.removeItem(draftKey)}catch(_){}blankForm();$('#formMessage').textContent=__old?'بارنامه شماره '+digits(rec.id)+' ویرایش شد. برگه‌ی چاپ‌شده‌ی قبلی دیگر معتبر نیست؛ دوباره چاپ کنید.':'بارنامه شماره '+digits(rec.id)+' ثبت شد.';if(__old&&prefs.print!=='silent'&&window.v23Alert)window.v23Alert('بارنامه '+digits(rec.id)+' ویرایش شد','برگه‌ی چاپ‌شده‌ی قبلی این بارنامه دیگر معتبر نیست و بارکد آن پذیرفته نمی‌شود. برگه‌ی جدید را چاپ کنید و برگه‌ی قبلی را دور بیندازید.');$('#formMessage').className='wb-form-message success';$('#senderName').focus();renderDashboard();if(prefs.print==='silent')printWaybill(rec,true);else if(prefs.print==='preview')printWaybill(rec);else if(prefs.print==='ask'&&confirm('پیش‌نمایش چاپ نمایش داده شود؟'))printWaybill(rec)});
+ lastSavedId=rec.id;try{localStorage.removeItem(draftKey)}catch(_){}blankForm();$('#formMessage').textContent=__old?'اصلاحیه بارنامه شماره '+digits(rec.id)+' ثبت شد. برگه‌ی چاپ‌شده‌ی قبلی دیگر معتبر نیست؛ دوباره چاپ کنید.':'بارنامه شماره '+digits(rec.id)+' ثبت شد.';if(__old&&prefs.print!=='silent'&&window.v23Alert){
+   const event=rec.auditTrail[rec.auditTrail.length-1],diff=event.changes.map(x=>x.f+': از «'+x.from+'» به «'+x.to+'»').join('\n');
+   window.v23Alert('اصلاحیه بارنامه '+digits(rec.id)+' ثبت شد',diff+'\n\nکاربر: '+event.user+'\nزمان: '+event.at+' (UTC)\nبرگه‌ی چاپ‌شده‌ی قبلی دیگر معتبر نیست؛ نسخه جدید را چاپ کنید.');
+ }$('#formMessage').className='wb-form-message success';$('#senderName').focus();renderDashboard();if(prefs.print==='silent')printWaybill(rec,true);else if(prefs.print==='preview')printWaybill(rec);else if(prefs.print==='ask'&&confirm('پیش‌نمایش چاپ نمایش داده شود؟'))printWaybill(rec)});
 $('#saveDraft').onclick=()=>{const d=gather();if(safeWrite(draftKey,d)){toast('پیش‌نویس ذخیره شد.');$('#formMessage').textContent='پیش‌نویس ذخیره شد؛ هنوز بارنامه صادر نشده است.';$('#formMessage').className='wb-form-message success'}};
 /* V16: Offline A4 / 3 copies, QR carries a compact compressed snapshot of all principal fields.
    The QR is NOT signed and does NOT establish authenticity or payment authorization. */
