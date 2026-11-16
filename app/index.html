@@ -4072,7 +4072,7 @@ window.v16DecodeQr=fromQR;
  window.v27SuperName=()=>saRead().username;
  function can(perm){if(!authRequired())return true;const u=currentUser();if(!u)return false;return !!u.admin||!!(u.perms&&u.perms[perm])}
  const isAdmin=()=>!authRequired()||!!currentUser()?.admin;
- window.v23Can=can;window.v23UserName=()=>{const u=currentUser();return u?u.username:''};window.v23IsAdmin=()=>isAdmin();
+ window.v23Can=can;window.v23UserName=()=>{const u=currentUser();return u?u.username:''};window.v23UserId=()=>{const u=currentUser();return u?u.id:''};window.v23IsAdmin=()=>isAdmin();
 
  function ensureLogin(){
   let ov=$('v23Login');if(ov)return ov;
@@ -4648,6 +4648,7 @@ window.v16DecodeQr=fromQR;
 #v25AuditPanel[hidden]{display:none}
 @media(max-width:720px){.v25-kvs{grid-template-columns:1fr}}
 </style>
+<script src="waybill-audit.js"></script>
 <script id="v25-main">
 /* V25 (version 1): Shamsi date picker, range finance report, report filters, edit/cancel + audit log,
    destination buttons, single package type, handoff/receive fixes. */
@@ -4664,7 +4665,8 @@ window.v16DecodeQr=fromQR;
  const saveUi=p=>wrJ(UIK,{...ui(),...p});
  const can=p=>typeof window.v23Can==='function'?window.v23Can(p):true;
  const isAdm=()=>typeof window.v23IsAdmin==='function'?window.v23IsAdmin():true;
- const userName=()=>typeof window.v23UserName==='function'?(window.v23UserName()||'—'):'—';
+ const userName=()=>typeof window.v23UserName==='function'?(window.v23UserName()||'کاربر محلی (بدون ورود)'):'کاربر محلی (بدون ورود)';
+ const actor=()=>({user:userName(),userId:typeof window.v23UserId==='function'?window.v23UserId():''});
 
  /* ================= Shamsi calendar ================= */
  const pf=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric',timeZone:'UTC'});
@@ -4824,16 +4826,12 @@ window.v16DecodeQr=fromQR;
  const MONEY=new Set(['preFare','postFare','storageFee','otherFee','total']);
  const pkgText=r=>(r.packages||[]).map(p=>`${p.title||'—'}${p.kind?' ('+p.kind+')':''} × ${p.qty}${p.weight?' · '+p.weight+' کیلو':''}`).join(' | ')||'—';
  const view=(k,v)=>MONEY.has(k)?money(v)+' تومان':(String(v??'').trim()||'—');
- const auditRead=()=>{const a=rdJ(AUDK,[]);return Array.isArray(a)?a:[]};
- function auditAdd(e){const a=auditRead();a.push({n:a.length+1,at:new Date().toISOString(),user:userName(),...e});wrJ(AUDK,a)}
- window.v25AuditEdit=function(oldR,newR){
-  const changes=[];
-  FIELDS.forEach(([k,l])=>{const a=MONEY.has(k)?Number(oldR[k])||0:String(oldR[k]??'').trim(),b=MONEY.has(k)?Number(newR[k])||0:String(newR[k]??'').trim();if(a!==b)changes.push({f:l,from:view(k,oldR[k]),to:view(k,newR[k])})});
-  const pa=pkgText(oldR),pb=pkgText(newR);if(pa!==pb)changes.push({f:'مشخصات بسته',from:pa,to:pb});
-  if(changes.length)auditAdd({type:'edit',rid:String(newR.id),changes});
- };
+ const auditRead=()=>window.barresanWaybillAudit.allEvents(
+   normalizeWaybillRecords(safeRead(recKey,[])),rdJ(AUDK,[]));
+ // Amendments are written inside each record in the same storage operation.
+ // Older audit records stored separately remain readable for compatibility.
  const auditOf=id=>auditRead().filter(x=>String(x.rid)===String(id));
- const jDateTime=ts=>{try{return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Tehran'}).format(new Date(ts))}catch(_){return ts}};
+ const jDateTime=ts=>{try{return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'Asia/Tehran'}).format(new Date(ts))+' (تهران)'}catch(_){return ts}};
  function auditRows(){
   const g=id=>$(id)?$(id).value:'';
   const f={from:parseJ(g('v25AFrom')),to:parseJ(g('v25ATo')),user:g('v25AUser'),type:g('v25AType'),rid:toLatin(g('v25ARid')).trim()};
@@ -4843,7 +4841,9 @@ window.v16DecodeQr=fromQR;
    if(f.user&&x.user!==f.user)return false;if(f.type&&x.type!==f.type)return false;if(f.rid&&String(x.rid)!==f.rid)return false;return true;
   }).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
  }
- const rowHtml=x=>`<tr><td>${esc(jDateTime(x.at))}</td><td><b>${esc(fa(x.rid))}</b></td><td>${x.type==='cancel'?'<span class="v25-tag bad">ابطال</span>':'<span class="v25-tag">ویرایش</span>'}</td><td>${esc(x.user)}</td><td>${x.type==='cancel'?'دلیل: '+esc(x.reason||'—'):(x.changes||[]).map(c=>`<div><b>${esc(c.f)}:</b> ${esc(c.from)} ← ${esc(c.to)}</div>`).join('')}</td></tr>`;
+ const auditDiff=x=>(x.changes||[]).map(c=>'<div><b>'+esc(c.f)+':</b> <span>از: '+esc(c.from)+'</span> | <span>به: '+esc(c.to)+'</span></div>').join('');
+ const auditDetail=x=>(x.reason?'<div><b>دلیل:</b> '+esc(x.reason)+'</div>':'')+auditDiff(x);
+ const rowHtml=x=>`<tr><td>${esc(jDateTime(x.at))}</td><td><b>${esc(fa(x.rid))}</b></td><td>${x.type==='cancel'?'<span class="v25-tag bad">ابطال</span>':'<span class="v25-tag">اصلاح</span>'}</td><td>${esc(x.user)}</td><td>${auditDetail(x)}</td></tr>`;
  function renderAudit(){
   const p=$('v25AuditPanel');if(!p)return;
   if(!p.dataset.built){
