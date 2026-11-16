@@ -232,11 +232,11 @@ async function smokeUpdater() {
     server = http.createServer((req, res) => {
       const pathname = req.url.split('?')[0];
       if (pathname.startsWith('/latest-')) {
-        const url = 'http://127.0.0.1:' + server.address().port + '/v1.0.7/Barresan-Setup-1.0.7-' + arch + '.exe';
-        const body = 'version: 1.0.7\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
+        const url = 'http://127.0.0.1:' + server.address().port + '/v1.0.8/Barresan-Setup-1.0.8-' + arch + '.exe';
+        const body = 'version: 1.0.8\nfiles:\n  - url: ' + url + '\n    sha512: ' + hash + '\n    size: ' + bytes.length + '\npath: ' + url + '\nsha512: ' + hash + '\n';
         res.writeHead(200, { 'Content-Type': 'text/yaml' }); res.end(body);
       } else if (pathname.endsWith('.blockmap')) {
-        const map = pathname.includes('/v1.0.7/') ? newBlockmap : oldBlockmap;
+        const map = pathname.includes('/v1.0.8/') ? newBlockmap : oldBlockmap;
         res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': map.length }); res.end(map);
       } else if (pathname.endsWith('.exe')) {
         const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '');
@@ -289,6 +289,14 @@ async function smoke() {
     && shippedHid.includes('v22QrScanInput')
     && shippedHid.includes('var buffers = new WeakMap()')
     && shippedHid.includes("doc.addEventListener('beforeinput'");
+  const shippedAudit = fs.readFileSync(path.join(__dirname, 'app', 'waybill-audit.js'), 'utf8');
+  out.auditBundle = shippedHtml.includes('<script src="waybill-audit.js"></script>')
+    && shippedHtml.includes('data-v28-amend')
+    && shippedHtml.includes('data-v28-cancel')
+    && shippedHtml.includes('data-v28-log')
+    && shippedAudit.includes('auditTrail')
+    && shippedAudit.includes('function amend(')
+    && shippedAudit.includes('function cancel(');
 
   try { const d = pickBackupDrive(parseDrives('C:=3=5000000000\r\nD:=3=900000000000\r\nE:=5=0\r\nF:=2=8000000000\r\n'), 'C:\\'); out.drivePick = d.map(x => x.id).join(','); } catch (e) { out.drivePick = 'ERR ' + e; }
   __mark('drive-pick-done');
@@ -325,7 +333,7 @@ async function smoke() {
     s4.close(); fs.unlinkSync(testUpdate);
     out.ok = out.ok && out.preUpdateRestoredRows === 2001;
     out.updaterIntegration = await smokeUpdater();
-    out.ok = out.ok && out.hidBundle && out.appVersion === '1.0.6' && out.updaterIntegration.checked === 'available' && out.updaterIntegration.downloaded === 'downloaded';
+    out.ok = out.ok && out.hidBundle && out.auditBundle && out.appVersion === '1.0.7' && out.updaterIntegration.checked === 'available' && out.updaterIntegration.downloaded === 'downloaded';
   } catch (e) { out.ok = false; out.error = String(e && e.stack || e); }
   console.log('SMOKE_RESULT ' + JSON.stringify(out));
   if (process.env.SMOKE_OUT) { try { fs.writeFileSync(process.env.SMOKE_OUT, JSON.stringify(out)); } catch (_) {} }
