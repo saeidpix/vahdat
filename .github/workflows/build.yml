@@ -21,7 +21,7 @@ jobs:
       - name: Check updater state machine
         run: node tests/updater-regression.js
       - name: Verify build version
-        run: node -e "if(require('./package.json').version!=='1.0.4')process.exit(1)"
+        run: node -e "if(require('./package.json').version!=='1.0.5')process.exit(1)"
       - name: Build and smoke-test both installers (64-bit, then 32-bit)
         shell: pwsh
         run: |
@@ -37,7 +37,7 @@ jobs:
             $d = if ($arch -eq "x64") { "win-unpacked" } else { "win-ia32-unpacked" }
             if (-not (Test-Path "dist\$d\resources\app-update.yml")) { Write-Error "missing app-update.yml ($arch)"; exit 1 }
             $out = "$PWD\smoke-$arch.json"
-            $env:SMOKE_INSTALLER = (Resolve-Path "dist\Barresan-Setup-1.0.4-$arch.exe").Path
+            $env:SMOKE_INSTALLER = (Resolve-Path "dist\Barresan-Setup-1.0.5-$arch.exe").Path
             node scripts/create-delta-fixture.js $env:SMOKE_INSTALLER "dist\delta-fixture-$arch.exe"
             if ($LASTEXITCODE -ne 0) { exit 1 }
             $env:SMOKE_CHANGED_INSTALLER = (Resolve-Path "dist\delta-fixture-$arch.exe").Path
