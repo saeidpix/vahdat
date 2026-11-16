@@ -2863,6 +2863,7 @@ $('#waybillForm').addEventListener('submit',e=>{e.preventDefault();
    __old=updated[index];
    rec={...__old,...data};
    const reason=document.getElementById('v25AmendReason')?.value.trim()||'';
+   if(!window.v23UserId?.())return invalid('برای اصلاح و ثبت نام کاربر در سابقه، ابتدا با حساب کاربری وارد شوید.',document.getElementById('v25AmendReason'));
    try{
      if(!window.barresanWaybillAudit)throw Error('بخش ثبت سوابق تغییرات فعال نیست؛ اصلاح متوقف شد.');
      rec=window.barresanWaybillAudit.amend(__old,rec,{
@@ -4693,7 +4694,7 @@ window.v16DecodeQr=fromQR;
  const can=p=>typeof window.v23Can==='function'?window.v23Can(p):true;
  const isAdm=()=>typeof window.v23IsAdmin==='function'?window.v23IsAdmin():true;
  const userName=()=>typeof window.v23UserName==='function'?(window.v23UserName()||'کاربر محلی (بدون ورود)'):'کاربر محلی (بدون ورود)';
- const actor=()=>({user:userName(),userId:typeof window.v23UserId==='function'?window.v23UserId():''});
+ const actor=()=>{const userId=typeof window.v23UserId==='function'?window.v23UserId():'';if(!userId)throw Error('برای اصلاح یا ابطال، ابتدا باید با نام کاربری وارد شوید.');return{user:userName(),userId}};
 
  /* ================= Shamsi calendar ================= */
  const pf=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric',timeZone:'UTC'});
@@ -4835,7 +4836,7 @@ window.v16DecodeQr=fromQR;
   const h3=view.querySelectorAll('.v19-card-head h3')[0];if(h3)h3.textContent='فهرست بارنامه‌ها';
   // tabs
   const tabs=document.createElement('div');tabs.className='v25-tabs';
-  tabs.innerHTML='<button type="button" class="on" data-t="list">فهرست بارنامه‌ها</button><button type="button" data-t="audit" id="v25TabAudit">ویرایش‌ها و ابطال‌ها</button>';
+  tabs.innerHTML='<button type="button" class="on" data-t="list">فهرست بارنامه‌ها</button><button type="button" data-t="audit" id="v25TabAudit">اصلاحات و ابطال‌ها</button>';
   view.querySelector('.v19-head').insertAdjacentElement('afterend',tabs);
   const listParts=[...view.children].filter(el=>!el.classList.contains('v19-head')&&el!==tabs);
   const auditPanel=document.createElement('section');auditPanel.id='v25AuditPanel';auditPanel.hidden=true;view.appendChild(auditPanel);
@@ -4870,7 +4871,7 @@ window.v16DecodeQr=fromQR;
  }
  const auditDiff=x=>(x.changes||[]).map(c=>'<div><b>'+esc(c.f)+':</b> <span>از: '+esc(c.from)+'</span> | <span>به: '+esc(c.to)+'</span></div>').join('');
  const auditDetail=x=>(x.reason?'<div><b>دلیل:</b> '+esc(x.reason)+'</div>':'')+auditDiff(x);
- const rowHtml=x=>`<tr><td>${esc(jDateTime(x.at))}</td><td><b>${esc(fa(x.rid))}</b></td><td>${x.type==='cancel'?'<span class="v25-tag bad">ابطال</span>':'<span class="v25-tag">اصلاح</span>'}</td><td>${esc(x.user)}</td><td>${auditDetail(x)}</td></tr>`;
+ const rowHtml=x=>`<tr><td title="${esc(x.at)}">${esc(jDateTime(x.at))}</td><td><b>${esc(fa(x.rid))}</b></td><td>${x.type==='cancel'?'<span class="v25-tag bad">ابطال</span>':'<span class="v25-tag">اصلاح</span>'}</td><td>${esc(x.user)}</td><td>${auditDetail(x)}</td></tr>`;
  function renderAudit(){
   const p=$('v25AuditPanel');if(!p)return;
   if(!p.dataset.built){
@@ -4878,7 +4879,7 @@ window.v16DecodeQr=fromQR;
    p.innerHTML=`<div class="v19-card"><div class="v25-fgrid">
     <div class="v24-f" id="v25AFromW"><label>از تاریخ</label></div><div class="v24-f" id="v25AToW"><label>تا تاریخ</label></div>
     <div class="v24-f"><label for="v25ARid">شماره بارنامه</label><input id="v25ARid" inputmode="numeric" dir="ltr"></div>
-    <div class="v24-f"><label for="v25AType">نوع</label><select id="v25AType"><option value="">همه</option><option value="edit">ویرایش</option><option value="cancel">ابطال</option></select></div>
+    <div class="v24-f"><label for="v25AType">نوع</label><select id="v25AType"><option value="">همه</option><option value="edit">اصلاح</option><option value="cancel">ابطال</option></select></div>
     <div class="v24-f"><label for="v25AUser">کاربر</label><select id="v25AUser"><option value="">همه‌ی کاربران</option></select></div>
     <div class="v24-f" style="align-self:end;display:flex;gap:8px"><button type="button" class="v24-btn alt" id="v25AReset">پاک کردن فیلترها</button><button type="button" class="v24-btn" id="v25APrint">چاپ</button></div></div></div>
     <section class="v19-card"><div class="v19-card-head"><span class="v19-symbol">▤</span><div><h3>ویرایش‌ها و ابطال‌ها</h3><small id="v25ACount"></small></div></div><div class="v21-table-scroll"><table class="v21-report-table"><thead><tr><th>تاریخ و ساعت</th><th>بارنامه</th><th>نوع</th><th>کاربر</th><th>تغییرات</th></tr></thead><tbody id="v25ABody"></tbody></table></div></section>`;
@@ -4919,13 +4920,13 @@ window.v16DecodeQr=fromQR;
  window.v25BeginAmend=function(id){
   const r=recs().find(x=>String(x.id)===String(id));
   if(!r)return window.v23Alert?.('بارنامه پیدا نشد','اطلاعات را بازخوانی کنید.');
-  if(!can('editBill')||!editable(r))return window.v23Alert?.('اجازه اصلاح وجود ندارد','اصلاح تنها برای بارنامه صادرشده و تحویل‌نداده‌شده با مجوز کاربر امکان‌پذیر است.');
+  if(!can('editBill')||!editable(r)||!window.v23UserId?.())return window.v23Alert?.('اجازه اصلاح وجود ندارد','اصلاح تنها برای بارنامه صادرشده و تحویل‌نداده‌شده با ورود کاربر مجاز امکان‌پذیر است.');
   blankForm();fillForm(r);showView('waybill');
  };
  window.v25BeginCancel=function(id){
   const r=recs().find(x=>String(x.id)===String(id));
   if(!r)return window.v23Alert?.('بارنامه پیدا نشد','اطلاعات را بازخوانی کنید.');
-  if(!can('cancelBill')||!editable(r))return window.v23Alert?.('اجازه ابطال وجود ندارد','ابطال تنها برای بارنامه صادرشده و تحویل‌نداده‌شده با مجوز کاربر امکان‌پذیر است.');
+  if(!can('cancelBill')||!editable(r)||!window.v23UserId?.())return window.v23Alert?.('اجازه ابطال وجود ندارد','ابطال تنها برای بارنامه صادرشده و تحویل‌نداده‌شده با ورود کاربر مجاز امکان‌پذیر است.');
   askCancel(r);
  };
  window.v25ViewRecord=function(id){
@@ -4958,6 +4959,7 @@ window.v16DecodeQr=fromQR;
   dialog('ابطال بارنامه '+fa(r.id),`<p>با ابطال، بارنامه حذف نمی‌شود و شماره‌اش می‌ماند، اما دیگر قابل تحویل، دریافت یا ترخیص نیست. این کار برگشت‌پذیر نیست.</p><div class="v24-f"><label for="v25Reason">دلیل ابطال *</label><textarea id="v25Reason" rows="3" maxlength="300"></textarea></div><div class="v24-msg err" id="v25ReasonMsg"></div>`,[
    {label:'تأیید ابطال',cls:'warn',onClick:close=>{
     const reason=$('v25Reason').value.trim();if(!reason){$('v25ReasonMsg').textContent='نوشتن دلیل الزامی است.';return}
+    if(!window.v23UserId?.()){$('v25ReasonMsg').textContent='برای ابطال ابتدا با حساب کاربری وارد شوید.';return}
     if(!can('cancelBill')){$('v25ReasonMsg').textContent='مجوز ابطال ندارید.';return}
     const list=recs(),i=list.findIndex(x=>String(x.id)===String(r.id));if(i<0){$('v25ReasonMsg').textContent='بارنامه پیدا نشد.';return}
     try{
